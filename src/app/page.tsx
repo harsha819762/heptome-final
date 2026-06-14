@@ -1,65 +1,132 @@
+"use client";
+
+import { useCategories, useTopServices } from "@/hooks/useServices";
+import { Snowflake, Sparkles, Droplet, Zap, PaintRoller, Scissors, Clock, Star, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { useCartStore } from "@/store/useCart";
+
+// Helper to map string icon names to Lucide icons
+const IconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Snowflake,
+  Sparkles,
+  Droplet,
+  Zap,
+  PaintRoller,
+  Scissors,
+};
 
 export default function Home() {
+  const { data: categories, isLoading: isCategoriesLoading } = useCategories();
+  const { data: services, isLoading: isServicesLoading } = useTopServices();
+  const addItem = useCartStore(state => state.addItem);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
+    <div className="space-y-12 pb-12">
+      {/* Hero Banner Section */}
+      <section className="relative rounded-2xl overflow-hidden bg-slate-900 text-white shadow-xl h-[300px] sm:h-[400px] flex items-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-800/80 to-transparent z-10" />
+        <Image 
+          src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=2070&auto=format&fit=crop" 
+          alt="Home Services" 
+          fill 
+          className="object-cover opacity-60"
           priority
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+        <div className="relative z-20 px-8 sm:px-12 max-w-2xl">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4 tracking-tight">Expert home services, <br/><span className="text-blue-400">on demand.</span></h1>
+          <p className="text-lg text-slate-300 mb-8 max-w-lg">Get professional AC repair, cleaning, and handyman services at your doorstep within 60 minutes.</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Categories Grid */}
+      <section>
+        <div className="flex justify-between items-end mb-6">
+          <h2 className="text-2xl font-bold text-slate-900">What are you looking for?</h2>
         </div>
-      </main>
+        
+        {isCategoriesLoading ? (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="animate-pulse bg-slate-200 rounded-xl aspect-square" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+            {categories?.map((cat) => {
+              const Icon = IconMap[cat.icon] || Zap;
+              return (
+                <button 
+                  key={cat.id}
+                  className="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-100 transition-all group"
+                >
+                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 text-center">{cat.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Top Services */}
+      <section>
+        <div className="flex justify-between items-end mb-6">
+          <h2 className="text-2xl font-bold text-slate-900">Most Booked Services</h2>
+          <button className="text-blue-600 font-medium text-sm flex items-center hover:text-blue-700 transition-colors">
+            See all <ChevronRight className="w-4 h-4 ml-1" />
+          </button>
+        </div>
+
+        {isServicesLoading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="animate-pulse bg-white border border-slate-100 rounded-2xl h-48" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {services?.map((service) => (
+              <div key={service.id} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all flex flex-col h-full group">
+                <div className="flex justify-between items-start mb-4">
+                  {service.tags.includes("Bestseller") ? (
+                    <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2.5 py-1 rounded-full flex items-center">
+                      <Star className="w-3 h-3 mr-1 fill-orange-700" /> Bestseller
+                    </span>
+                  ) : service.tags.includes("Premium") ? (
+                    <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                      Premium
+                    </span>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+                <Link href={`/service/${service.id}`} className="hover:underline">
+                  <h3 className="font-bold text-slate-900 text-lg mb-1">{service.name}</h3>
+                </Link>
+                <div className="flex items-center text-sm text-slate-500 mb-4">
+                  <Clock className="w-4 h-4 mr-1.5" />
+                  {service.duration}
+                </div>
+                <div className="mt-auto flex justify-between items-center pt-4 border-t border-slate-100">
+                  <span className="font-bold text-lg text-slate-900">₹{service.price}</span>
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      addItem(service);
+                    }}
+                    className="bg-blue-50 text-blue-600 font-medium px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
