@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Search, ShoppingCart, User, MapPin, LogOut } from "lucide-react";
 import { useCartStore } from "@/store/useCart";
+import { useSearchStore } from "@/store/useSearch";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import Image from "next/image";
@@ -10,6 +11,7 @@ import Image from "next/image";
 export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
+  const { query, setQuery } = useSearchStore();
   const { user, mockLogin, logout } = useAuth();
 
   useEffect(() => {
@@ -42,6 +44,8 @@ export default function Navbar() {
               </div>
               <input
                 type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition-all sm:text-sm"
                 placeholder="Search for services (e.g. AC Repair, Cleaning)..."
               />

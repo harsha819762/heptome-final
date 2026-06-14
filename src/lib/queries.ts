@@ -32,7 +32,10 @@ const MOCK_SERVICES: Service[] = [
   { id: "s4", catId: "c4", name: "Switchboard Fix", price: 149, duration: "30 mins", tags: [] },
 ];
 
+const isMockMode = !process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY === "mock_api_key";
+
 export async function getCategories(): Promise<Category[]> {
+  if (isMockMode) return MOCK_CATEGORIES;
   try {
     const categoriesRef = collection(db, "categories");
     const snapshot = await getDocs(categoriesRef);
@@ -45,6 +48,7 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function getTopServices(): Promise<Service[]> {
+  if (isMockMode) return MOCK_SERVICES;
   try {
     const servicesRef = collection(db, "services");
     const q = query(servicesRef, limit(10));
@@ -58,6 +62,18 @@ export async function getTopServices(): Promise<Service[]> {
 }
 
 export async function getServiceById(id: string): Promise<Service | null> {
+  if (isMockMode) {
+    const service = MOCK_SERVICES.find(s => s.id === id);
+    if (service) return service;
+    return {
+      id,
+      catId: "c1",
+      name: `Premium Service ${id}`,
+      price: 1499,
+      duration: "2 hrs",
+      tags: ["Recommended"]
+    };
+  }
   try {
     const docRef = doc(db, "services", id);
     const docSnap = await getDoc(docRef);
