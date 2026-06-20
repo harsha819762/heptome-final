@@ -10,13 +10,13 @@ import { CartProvider } from "./context/CartContext";
 import { BookingProvider } from "./context/BookingContext";
 
 // Pages
-import Home from "./pages/Home";
-import Services from "./pages/Services";
-import ServiceDetail from "./pages/ServiceDetail";
-import Booking from "./pages/Booking";
-import Profile from "./pages/Profile";
-import MyBookings from "./pages/MyBookings";
-import NotFound from "./pages/NotFound";
+import Home from "./views/Home";
+import Services from "./views/Services";
+import ServiceDetail from "./views/ServiceDetail";
+import Booking from "./views/Booking";
+import Profile from "./views/Profile";
+import MyBookings from "./views/MyBookings";
+import NotFound from "./views/NotFound";
 
 // Global Components
 import Navbar from "./components/Navbar";

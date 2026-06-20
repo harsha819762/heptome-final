@@ -26,7 +26,7 @@ function isRateLimited(ip: string): { limited: boolean; retryAfter: number } {
 }
 
 export async function GET(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for") || request.ip || "127.0.0.1";
+  const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
   
   const { limited, retryAfter } = isRateLimited(ip);
   if (limited) {
