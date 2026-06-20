@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  web-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - INSTANCE_ID=Node-1
+    expose:
+      - "3000"
+    restart: always
+
+  web-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - INSTANCE_ID=Node-2
+    expose:
+      - "3000"
+    restart: always
+
+  web-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - INSTANCE_ID=Node-3
+    expose:
+      - "3000"
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      - web-1
+      - web-2
+      - web-3
+    restart: always
