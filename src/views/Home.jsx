@@ -7,6 +7,7 @@ import { servicesData, professionalsData } from "../data/servicesData";
 import { motion, AnimatePresence } from "framer-motion";
 import { listServiceCategories } from "@dataconnect/example";
 import { dataConnect } from "../lib/firebase";
+import { ControlledMapExample } from "../components/ControlledMapExample";
 import { 
   IoShieldCheckmarkOutline, IoPricetagOutline, IoTimeOutline, 
   IoStar, IoChevronDownOutline, IoSearchOutline, IoSparklesOutline 
@@ -307,6 +308,17 @@ export default function Home() {
               </motion.div>
             );
           })}
+        </div>
+      </section>
+
+      {/* SECTION 4.5: COVERAGE MAP */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-0 mt-8 mb-8">
+        <div className="text-center sm:text-left mb-8">
+          <h2 className="text-2xl sm:text-3xl font-black text-[#1A1A2E]">Service Coverage Area</h2>
+          <p className="text-slate-400 text-xs sm:text-sm font-medium mt-1">We have professionals serving all across the region</p>
+        </div>
+        <div className="rounded-3xl overflow-hidden shadow-sm border border-slate-200">
+          <ControlledMapExample />
         </div>
       </section>
 
