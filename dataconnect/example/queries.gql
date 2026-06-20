@@ -1,73 +1,66 @@
-# Example queries for a simple movie app.
-
-# @auth() directives control who can call each operation.
-# Anyone should be able to list all movies, so the auth level is set to PUBLIC
-query ListMovies @auth(level: PUBLIC, insecureReason: "Anyone can list all movies.") {
-  movies {
+# List all service categories
+query ListServiceCategories @auth(level: PUBLIC, insecureReason: "Anyone can browse categories") {
+  serviceCategories {
     id
-    title
-    imageUrl
-    genre
+    name
+    basePrice
+    iconUrl
+    description
   }
 }
 
-# List all users, only admins should be able to list all users, so we use NO_ACCESS
-query ListUsers @auth(level: NO_ACCESS) {
-  users {
+# Get user profile details
+query GetUserProfile($id: UUID!) @auth(level: PUBLIC, insecureReason: "For profiling purposes") {
+  user(id: $id) {
     id
-    username
+    name
+    email
+    role
+    phoneNumber
+    avatarUrl
+    address
+    rating
   }
 }
 
-# Logged in users can list all their reviews and movie titles associated with the review
-# Since the query uses the uid of the current authenticated user, we set auth level to USER
-query ListUserReviews @auth(level: USER) {
-  user(key: { id_expr: "auth.uid" }) {
+# List bookings for a customer
+query ListCustomerBookings($customerId: UUID!) @auth(level: PUBLIC, insecureReason: "Show customer bookings") {
+  bookings(where: { customerId: { eq: $customerId } }) {
     id
-    username
-    # <field>_on_<foreign_key_field> makes it easy to grab info from another table
-    # Here, we use it to grab all the reviews written by the user.
-    reviews: reviews_on_user {
-      rating
-      reviewDate
-      reviewText
-      movie {
-        id
-        title
-      }
+    status
+    bookingDate
+    totalAmount
+    partnerNotes
+    serviceCategory {
+      name
+    }
+    partner {
+      name
+      phoneNumber
     }
   }
 }
 
-# Get movie by id
-query GetMovieById($id: UUID!) @auth(level: PUBLIC, insecureReason: "Anyone can get a movie by id.") {
-  movie(id: $id) {
+# List availability for a partner
+query ListPartnerAvailability($partnerId: UUID!) @auth(level: PUBLIC, insecureReason: "Check schedule") {
+  partnerAvailabilities(where: { partnerId: { eq: $partnerId } }) {
     id
-    title
-    imageUrl
-    genre
-    reviews: reviews_on_movie {
-      reviewText
-      reviewDate
-      rating
-      user {
-        id
-        username
-      }
-    }
+    startTime
+    endTime
+    isBooked
   }
 }
 
-# Search for movies, actors, and reviews
-query SearchMovie($titleInput: String, $genre: String) @auth(level: PUBLIC, insecureReason: "Anyone can search for movies.") {
-  movies(
-    where: {
-      _and: [{ genre: { eq: $genre } }, { title: { contains: $titleInput } }]
-    }
-  ) {
+# List reviews for a partner
+query ListPartnerReviews($partnerId: UUID!) @auth(level: PUBLIC, insecureReason: "Check partner ratings") {
+  reviews(where: { partnerId: { eq: $partnerId } }) {
     id
-    title
-    genre
-    imageUrl
+    rating
+    comment
+    createdAt
+    customer {
+      name
+      avatarUrl
+    }
   }
 }

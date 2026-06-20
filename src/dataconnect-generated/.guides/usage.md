@@ -12,26 +12,24 @@ For each operation, there is a wrapper hook that can be used to call the operati
 
 Here are all of the hooks that get generated:
 ```ts
-import { useCreateMovie, useUpsertUser, useAddReview, useDeleteReview, useListMovies, useListUsers, useListUserReviews, useGetMovieById, useSearchMovie } from '@dataconnect/example/react';
+import { useCreateUser, useCreateBooking, useAddReview, useListServiceCategories, useGetUserProfile, useListCustomerBookings, useListPartnerAvailability, useListPartnerReviews } from '@dataconnect/example/react';
 // The types of these hooks are available in react/index.d.ts
 
-const { data, isPending, isSuccess, isError, error } = useCreateMovie(createMovieVars);
+const { data, isPending, isSuccess, isError, error } = useCreateUser(createUserVars);
 
-const { data, isPending, isSuccess, isError, error } = useUpsertUser(upsertUserVars);
+const { data, isPending, isSuccess, isError, error } = useCreateBooking(createBookingVars);
 
 const { data, isPending, isSuccess, isError, error } = useAddReview(addReviewVars);
 
-const { data, isPending, isSuccess, isError, error } = useDeleteReview(deleteReviewVars);
+const { data, isPending, isSuccess, isError, error } = useListServiceCategories();
 
-const { data, isPending, isSuccess, isError, error } = useListMovies();
+const { data, isPending, isSuccess, isError, error } = useGetUserProfile(getUserProfileVars);
 
-const { data, isPending, isSuccess, isError, error } = useListUsers();
+const { data, isPending, isSuccess, isError, error } = useListCustomerBookings(listCustomerBookingsVars);
 
-const { data, isPending, isSuccess, isError, error } = useListUserReviews();
+const { data, isPending, isSuccess, isError, error } = useListPartnerAvailability(listPartnerAvailabilityVars);
 
-const { data, isPending, isSuccess, isError, error } = useGetMovieById(getMovieByIdVars);
-
-const { data, isPending, isSuccess, isError, error } = useSearchMovie(searchMovieVars);
+const { data, isPending, isSuccess, isError, error } = useListPartnerReviews(listPartnerReviewsVars);
 
 ```
 
@@ -70,35 +68,32 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createMovie, upsertUser, addReview, deleteReview, listMovies, listUsers, listUserReviews, getMovieById, searchMovie } from '@dataconnect/example';
+import { createUser, createBooking, addReview, listServiceCategories, getUserProfile, listCustomerBookings, listPartnerAvailability, listPartnerReviews } from '@dataconnect/example';
 
 
-// Operation CreateMovie:  For variables, look at type CreateMovieVars in ../index.d.ts
-const { data } = await CreateMovie(dataConnect, createMovieVars);
+// Operation CreateUser:  For variables, look at type CreateUserVars in ../index.d.ts
+const { data } = await CreateUser(dataConnect, createUserVars);
 
-// Operation UpsertUser:  For variables, look at type UpsertUserVars in ../index.d.ts
-const { data } = await UpsertUser(dataConnect, upsertUserVars);
+// Operation CreateBooking:  For variables, look at type CreateBookingVars in ../index.d.ts
+const { data } = await CreateBooking(dataConnect, createBookingVars);
 
 // Operation AddReview:  For variables, look at type AddReviewVars in ../index.d.ts
 const { data } = await AddReview(dataConnect, addReviewVars);
 
-// Operation DeleteReview:  For variables, look at type DeleteReviewVars in ../index.d.ts
-const { data } = await DeleteReview(dataConnect, deleteReviewVars);
+// Operation ListServiceCategories: 
+const { data } = await ListServiceCategories(dataConnect);
 
-// Operation ListMovies: 
-const { data } = await ListMovies(dataConnect);
+// Operation GetUserProfile:  For variables, look at type GetUserProfileVars in ../index.d.ts
+const { data } = await GetUserProfile(dataConnect, getUserProfileVars);
 
-// Operation ListUsers: 
-const { data } = await ListUsers(dataConnect);
+// Operation ListCustomerBookings:  For variables, look at type ListCustomerBookingsVars in ../index.d.ts
+const { data } = await ListCustomerBookings(dataConnect, listCustomerBookingsVars);
 
-// Operation ListUserReviews: 
-const { data } = await ListUserReviews(dataConnect);
+// Operation ListPartnerAvailability:  For variables, look at type ListPartnerAvailabilityVars in ../index.d.ts
+const { data } = await ListPartnerAvailability(dataConnect, listPartnerAvailabilityVars);
 
-// Operation GetMovieById:  For variables, look at type GetMovieByIdVars in ../index.d.ts
-const { data } = await GetMovieById(dataConnect, getMovieByIdVars);
-
-// Operation SearchMovie:  For variables, look at type SearchMovieVars in ../index.d.ts
-const { data } = await SearchMovie(dataConnect, searchMovieVars);
+// Operation ListPartnerReviews:  For variables, look at type ListPartnerReviewsVars in ../index.d.ts
+const { data } = await ListPartnerReviews(dataConnect, listPartnerReviewsVars);
 
 
 ```
