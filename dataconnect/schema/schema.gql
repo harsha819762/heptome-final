@@ -1,0 +1,21 @@
+# User table is keyed by Firebase Auth UID.
+type User @table {
+  id: String! @default(expr: "auth.uid")
+  username: String! @col(dataType: "varchar(50)")
+}
+
+type Movie @table {
+  # Every table has an implicit primary key field that looks something like:
+  #  id: UUID! @default(expr: "uuidV4()")
+  title: String!
+  imageUrl: String!
+  genre: String
+}
+
+type Review @table(key: ["movie", "user"]) {
+  user: User!
+  movie: Movie!
+  rating: Int
+  reviewText: String
+  reviewDate: Date! @default(expr: "request.time")
+}
