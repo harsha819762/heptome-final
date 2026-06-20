@@ -19,6 +19,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*CreateUser*](#createuser)
   - [*CreateBooking*](#createbooking)
   - [*AddReview*](#addreview)
+  - [*SeedData*](#seeddata)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `example`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -1012,6 +1013,102 @@ console.log(data.review_insert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.review_insert);
+});
+```
+
+## SeedData
+You can execute the `SeedData` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect-generated/index.d.ts](./index.d.ts):
+```typescript
+seedData(): MutationPromise<SeedDataData, undefined>;
+
+interface SeedDataRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedDataData, undefined>;
+}
+export const seedDataRef: SeedDataRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+seedData(dc: DataConnect): MutationPromise<SeedDataData, undefined>;
+
+interface SeedDataRef {
+  ...
+  (dc: DataConnect): MutationRef<SeedDataData, undefined>;
+}
+export const seedDataRef: SeedDataRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the seedDataRef:
+```typescript
+const name = seedDataRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `SeedData` mutation has no variables.
+### Return Type
+Recall that executing the `SeedData` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `SeedDataData`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface SeedDataData {
+  user_insertMany: User_Key[];
+  serviceCategory_insertMany: ServiceCategory_Key[];
+}
+```
+### Using `SeedData`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, seedData } from '@dataconnect/example';
+
+
+// Call the `seedData()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await seedData();
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await seedData(dataConnect);
+
+console.log(data.user_insertMany);
+console.log(data.serviceCategory_insertMany);
+
+// Or, you can use the `Promise` API.
+seedData().then((response) => {
+  const data = response.data;
+  console.log(data.user_insertMany);
+  console.log(data.serviceCategory_insertMany);
+});
+```
+
+### Using `SeedData`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, seedDataRef } from '@dataconnect/example';
+
+
+// Call the `seedDataRef()` function to get a reference to the mutation.
+const ref = seedDataRef();
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = seedDataRef(dataConnect);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.user_insertMany);
+console.log(data.serviceCategory_insertMany);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.user_insertMany);
+  console.log(data.serviceCategory_insertMany);
 });
 ```
 

@@ -33,3 +33,66 @@ mutation AddReview($rating: Int!, $comment: String!, $createdAt: Timestamp!, $pa
     customerId_expr: "auth.uid"
   })
 }
+
+# Seed database mutation
+mutation SeedData @transaction @auth(level: PUBLIC, insecureReason: "Seed database data") {
+  user_insertMany(
+    data: [
+      {
+        id: "7f9b887a-dc8f-4f81-8cb0-6fb535a0f670",
+        name: "Harsha Vardhan",
+        email: "harsha819762@gmail.com",
+        role: "CUSTOMER",
+        phoneNumber: "9876543210",
+        avatarUrl: "https://randomuser.me/api/portraits/men/1.jpg",
+        address: "123, Park Lane, Mumbai",
+        rating: 5.0
+      },
+      {
+        id: "a2b109c1-4560-4b21-827d-08e17812ef10",
+        name: "Rajesh Kumar",
+        email: "rajesh@heptome.com",
+        role: "PARTNER",
+        phoneNumber: "9876543211",
+        avatarUrl: "https://randomuser.me/api/portraits/men/2.jpg",
+        address: "456, Lake View, Mumbai",
+        rating: 4.8
+      },
+      {
+        id: "b781e9fa-2849-411a-8c90-938fd8e21a4f",
+        name: "Priya Sharma",
+        email: "priya@heptome.com",
+        role: "PARTNER",
+        phoneNumber: "9876543212",
+        avatarUrl: "https://randomuser.me/api/portraits/women/1.jpg",
+        address: "789, Hill Top, Mumbai",
+        rating: 4.9
+      }
+    ]
+  )
+  serviceCategory_insertMany(
+    data: [
+      {
+        id: "18f8e1fa-8ba0-422e-a550-619f71c4c1a5",
+        name: "Women's Salon & Spa",
+        basePrice: 599.0,
+        iconUrl: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400",
+        description: "Facials, waxing, manicure, pedicure, and massage therapies."
+      },
+      {
+        id: "29a9e10f-cf8a-493e-821b-712f8a19de01",
+        name: "AC Repair & Service",
+        basePrice: 499.0,
+        iconUrl: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=400",
+        description: "AC cleaning, gas charging, repair, and installation."
+      },
+      {
+        id: "30b0e9f1-f09c-493e-b81c-813f8f192b02",
+        name: "Home Deep Cleaning",
+        basePrice: 1499.0,
+        iconUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
+        description: "Complete house cleaning, kitchen, bathroom, and sofa sanitization."
+      }
+    ]
+  )
+}

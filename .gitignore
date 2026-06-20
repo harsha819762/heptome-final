@@ -44,3 +44,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase emulator local data
+dataconnect/.dataconnect/pgliteData/
+.firebaserc.bak
+
+# Firebase debug logs
+firebase-debug.log
+dataconnect-debug.log
+pglite-debug.log
+*-debug.log

@@ -46,6 +46,18 @@ export function addReview(dcOrVars, vars) {
   return executeMutation(addReviewRef(dcInstance, inputVars));
 }
 
+export const seedDataRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'SeedData');
+}
+seedDataRef.operationName = 'SeedData';
+
+export function seedData(dc) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dc, undefined);
+  return executeMutation(seedDataRef(dcInstance, inputVars));
+}
+
 export const listServiceCategoriesRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();

@@ -12,7 +12,7 @@ For each operation, there is a wrapper hook that can be used to call the operati
 
 Here are all of the hooks that get generated:
 ```ts
-import { useCreateUser, useCreateBooking, useAddReview, useListServiceCategories, useGetUserProfile, useListCustomerBookings, useListPartnerAvailability, useListPartnerReviews } from '@dataconnect/example/react';
+import { useCreateUser, useCreateBooking, useAddReview, useSeedData, useListServiceCategories, useGetUserProfile, useListCustomerBookings, useListPartnerAvailability, useListPartnerReviews } from '@dataconnect/example/react';
 // The types of these hooks are available in react/index.d.ts
 
 const { data, isPending, isSuccess, isError, error } = useCreateUser(createUserVars);
@@ -20,6 +20,8 @@ const { data, isPending, isSuccess, isError, error } = useCreateUser(createUserV
 const { data, isPending, isSuccess, isError, error } = useCreateBooking(createBookingVars);
 
 const { data, isPending, isSuccess, isError, error } = useAddReview(addReviewVars);
+
+const { data, isPending, isSuccess, isError, error } = useSeedData();
 
 const { data, isPending, isSuccess, isError, error } = useListServiceCategories();
 
@@ -68,7 +70,7 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createUser, createBooking, addReview, listServiceCategories, getUserProfile, listCustomerBookings, listPartnerAvailability, listPartnerReviews } from '@dataconnect/example';
+import { createUser, createBooking, addReview, seedData, listServiceCategories, getUserProfile, listCustomerBookings, listPartnerAvailability, listPartnerReviews } from '@dataconnect/example';
 
 
 // Operation CreateUser:  For variables, look at type CreateUserVars in ../index.d.ts
@@ -79,6 +81,9 @@ const { data } = await CreateBooking(dataConnect, createBookingVars);
 
 // Operation AddReview:  For variables, look at type AddReviewVars in ../index.d.ts
 const { data } = await AddReview(dataConnect, addReviewVars);
+
+// Operation SeedData: 
+const { data } = await SeedData(dataConnect);
 
 // Operation ListServiceCategories: 
 const { data } = await ListServiceCategories(dataConnect);

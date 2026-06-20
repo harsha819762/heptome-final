@@ -1,4 +1,4 @@
-import { CreateUserData, CreateUserVariables, CreateBookingData, CreateBookingVariables, AddReviewData, AddReviewVariables, ListServiceCategoriesData, GetUserProfileData, GetUserProfileVariables, ListCustomerBookingsData, ListCustomerBookingsVariables, ListPartnerAvailabilityData, ListPartnerAvailabilityVariables, ListPartnerReviewsData, ListPartnerReviewsVariables } from '../';
+import { CreateUserData, CreateUserVariables, CreateBookingData, CreateBookingVariables, AddReviewData, AddReviewVariables, SeedDataData, ListServiceCategoriesData, GetUserProfileData, GetUserProfileVariables, ListCustomerBookingsData, ListCustomerBookingsVariables, ListPartnerAvailabilityData, ListPartnerAvailabilityVariables, ListPartnerReviewsData, ListPartnerReviewsVariables } from '../';
 import { UseDataConnectQueryResult, useDataConnectQueryOptions, UseDataConnectMutationResult, useDataConnectMutationOptions} from '@tanstack-query-firebase/react/data-connect';
 import { UseQueryResult, UseMutationResult} from '@tanstack/react-query';
 import { DataConnect } from 'firebase/data-connect';
@@ -13,6 +13,9 @@ export function useCreateBooking(dc: DataConnect, options?: useDataConnectMutati
 
 export function useAddReview(options?: useDataConnectMutationOptions<AddReviewData, FirebaseError, AddReviewVariables>): UseDataConnectMutationResult<AddReviewData, AddReviewVariables>;
 export function useAddReview(dc: DataConnect, options?: useDataConnectMutationOptions<AddReviewData, FirebaseError, AddReviewVariables>): UseDataConnectMutationResult<AddReviewData, AddReviewVariables>;
+
+export function useSeedData(options?: useDataConnectMutationOptions<SeedDataData, FirebaseError, void>): UseDataConnectMutationResult<SeedDataData, undefined>;
+export function useSeedData(dc: DataConnect, options?: useDataConnectMutationOptions<SeedDataData, FirebaseError, void>): UseDataConnectMutationResult<SeedDataData, undefined>;
 
 export function useListServiceCategories(options?: useDataConnectQueryOptions<ListServiceCategoriesData>): UseDataConnectQueryResult<ListServiceCategoriesData, undefined>;
 export function useListServiceCategories(dc: DataConnect, options?: useDataConnectQueryOptions<ListServiceCategoriesData>): UseDataConnectQueryResult<ListServiceCategoriesData, undefined>;

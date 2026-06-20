@@ -141,6 +141,11 @@ export interface Review_Key {
   __typename?: 'Review_Key';
 }
 
+export interface SeedDataData {
+  user_insertMany: User_Key[];
+  serviceCategory_insertMany: ServiceCategory_Key[];
+}
+
 export interface ServiceCategory_Key {
   id: UUIDString;
   __typename?: 'ServiceCategory_Key';
@@ -186,6 +191,18 @@ export const addReviewRef: AddReviewRef;
 
 export function addReview(vars: AddReviewVariables): MutationPromise<AddReviewData, AddReviewVariables>;
 export function addReview(dc: DataConnect, vars: AddReviewVariables): MutationPromise<AddReviewData, AddReviewVariables>;
+
+interface SeedDataRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): MutationRef<SeedDataData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): MutationRef<SeedDataData, undefined>;
+  operationName: string;
+}
+export const seedDataRef: SeedDataRef;
+
+export function seedData(): MutationPromise<SeedDataData, undefined>;
+export function seedData(dc: DataConnect): MutationPromise<SeedDataData, undefined>;
 
 interface ListServiceCategoriesRef {
   /* Allow users to create refs without passing in DataConnect */
