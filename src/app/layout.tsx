@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AuthSessionProvider from "@/components/AuthSessionProvider";
 
 export const metadata: Metadata = {
   title: "Heptome - Professional Home Services",
@@ -22,7 +23,9 @@ export default function RootLayout({
         />
       </head>
       <body className="h-full antialiased font-sans bg-white text-[#1A1A2E]">
-        {children}
+        <AuthSessionProvider>
+          {children}
+        </AuthSessionProvider>
       </body>
     </html>
   );
