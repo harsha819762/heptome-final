@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { servicesData, professionalsData } from "../data/servicesData";
 import { motion, AnimatePresence } from "framer-motion";
+import { listServiceCategories } from "@dataconnect/example";
+import { dataConnect } from "../lib/firebase";
 import { 
   IoShieldCheckmarkOutline, IoPricetagOutline, IoTimeOutline, 
   IoStar, IoChevronDownOutline, IoSearchOutline, IoSparklesOutline 
@@ -58,6 +60,22 @@ export default function Home() {
   const [faqOpenIndex, setFaqOpenIndex] = useState(null);
   const [selectedPro, setSelectedPro] = useState(null);
   const [searchVal, setSearchVal] = useState("");
+  const [dbCategories, setDbCategories] = useState([]);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const response = await listServiceCategories(dataConnect);
+        if (response && response.data && response.data.serviceCategories) {
+          setDbCategories(response.data.serviceCategories);
+          console.log("Successfully connected to Firebase Backend!", response.data);
+        }
+      } catch (err) {
+        console.error("Failed to connect to Firebase backend:", err);
+      }
+    }
+    fetchCategories();
+  }, []);
 
   // Gather all services across categories for most booked section
   const mostBooked = servicesData
@@ -189,7 +207,13 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
-          {servicesData.map((cat) => (
+          {(dbCategories.length > 0 ? dbCategories.map(c => ({
+            id: c.id,
+            category: c.name,
+            icon: c.iconUrl || "✨",
+            rating: 4.8,
+            totalBookings: "New"
+          })) : servicesData).map((cat) => (
             <motion.div
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}

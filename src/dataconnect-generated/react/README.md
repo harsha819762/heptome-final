@@ -808,7 +808,6 @@ export interface AddReviewVariables {
   comment: string;
   createdAt: TimestampString;
   partnerId: UUIDString;
-  customerId: UUIDString;
 }
 ```
 ### Return Type
@@ -862,11 +861,10 @@ export default function AddReviewComponent() {
     comment: ..., 
     createdAt: ..., 
     partnerId: ..., 
-    customerId: ..., 
   };
   mutation.mutate(addReviewVars);
   // Variables can be defined inline as well.
-  mutation.mutate({ rating: ..., comment: ..., createdAt: ..., partnerId: ..., customerId: ..., });
+  mutation.mutate({ rating: ..., comment: ..., createdAt: ..., partnerId: ..., });
 
   // You can also pass in a `useDataConnectMutationOptions` object to `UseMutationResult.mutate()`.
   const options = {

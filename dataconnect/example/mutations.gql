@@ -24,12 +24,12 @@ mutation CreateBooking($status: String!, $bookingDate: Timestamp!, $totalAmount:
 }
 
 # Create Review
-mutation AddReview($rating: Int!, $comment: String!, $createdAt: Timestamp!, $partnerId: UUID!, $customerId: UUID!) @auth(level: PUBLIC, insecureReason: "Submit review") {
+mutation AddReview($rating: Int!, $comment: String!, $createdAt: Timestamp!, $partnerId: UUID!, $customerId: UUID @retired) @auth(level: USER) {
   review_insert(data: {
     rating: $rating,
     comment: $comment,
     createdAt: $createdAt,
     partnerId: $partnerId,
-    customerId: $customerId
+    customerId_expr: "auth.uid"
   })
 }

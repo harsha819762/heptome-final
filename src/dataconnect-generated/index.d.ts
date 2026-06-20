@@ -20,7 +20,6 @@ export interface AddReviewVariables {
   comment: string;
   createdAt: TimestampString;
   partnerId: UUIDString;
-  customerId: UUIDString;
 }
 
 export interface Booking_Key {

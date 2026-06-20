@@ -935,7 +935,6 @@ export interface AddReviewVariables {
   comment: string;
   createdAt: TimestampString;
   partnerId: UUIDString;
-  customerId: UUIDString;
 }
 ```
 ### Return Type
@@ -959,14 +958,13 @@ const addReviewVars: AddReviewVariables = {
   comment: ..., 
   createdAt: ..., 
   partnerId: ..., 
-  customerId: ..., 
 };
 
 // Call the `addReview()` function to execute the mutation.
 // You can use the `await` keyword to wait for the promise to resolve.
 const { data } = await addReview(addReviewVars);
 // Variables can be defined inline as well.
-const { data } = await addReview({ rating: ..., comment: ..., createdAt: ..., partnerId: ..., customerId: ..., });
+const { data } = await addReview({ rating: ..., comment: ..., createdAt: ..., partnerId: ..., });
 
 // You can also pass in a `DataConnect` instance to the action shortcut function.
 const dataConnect = getDataConnect(connectorConfig);
@@ -993,13 +991,12 @@ const addReviewVars: AddReviewVariables = {
   comment: ..., 
   createdAt: ..., 
   partnerId: ..., 
-  customerId: ..., 
 };
 
 // Call the `addReviewRef()` function to get a reference to the mutation.
 const ref = addReviewRef(addReviewVars);
 // Variables can be defined inline as well.
-const ref = addReviewRef({ rating: ..., comment: ..., createdAt: ..., partnerId: ..., customerId: ..., });
+const ref = addReviewRef({ rating: ..., comment: ..., createdAt: ..., partnerId: ..., });
 
 // You can also pass in a `DataConnect` instance to the `MutationRef` function.
 const dataConnect = getDataConnect(connectorConfig);
