@@ -54,3 +54,16 @@ firebase-debug.log
 dataconnect-debug.log
 pglite-debug.log
 *-debug.log
+
+# Old Firebase Data Connect (migrated to Supabase)
+dataconnect/
+src/dataconnect-generated/
+exportedData/
+.firebase/
+
+# Old Prisma schema (migrated to Supabase)
+prisma/
+
+# Firestore indexes
+dataconnect*.gql
+firestore*

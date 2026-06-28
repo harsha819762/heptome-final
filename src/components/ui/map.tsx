@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import MapGL, { ViewStateChangeEvent } from "react-map-gl";
+import MapGL, { ViewStateChangeEvent } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { clsx, type ClassValue } from "clsx";

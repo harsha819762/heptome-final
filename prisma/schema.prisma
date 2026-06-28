@@ -8,24 +8,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?   // null for OAuth users
-  role          Role      @default(CUSTOMER)
-  phone         String?
-  isVerified    Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+// ============ AUTH MODELS ============
 
-  accounts  Account[]
-  sessions  Session[]
-  bookings  Booking[]
-  addresses Address[]
-  reviews   Review[]
+model User {
+  id              String            @id @default(cuid())
+  name            String?
+  email           String            @unique
+  emailVerified   DateTime?
+  image           String?
+  password        String?           // null for OAuth users
+  role            Role              @default(CUSTOMER)
+  phone           String?
+  isVerified      Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  accounts        Account[]
+  sessions        Session[]
+  bookings        Booking[]
+  addresses       Address[]
+  reviews         Review[]
+  notifications   Notification[]
+  serviceProvider ServiceProvider?
 }
 
 model Account {
@@ -63,11 +67,221 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+enum Role {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
+
+// ============ SERVICE PROVIDER MODELS ============
+
+model ServiceProvider {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceTypes    ServiceType[]
+  bio             String?       @db.Text
+  experience      Int           @default(0)
+  rating          Float         @default(0)
+  totalJobs       Int           @default(0)
+  completionRate  Float         @default(0)
+  isVerified      Boolean       @default(false)
+  isAvailable     Boolean       @default(true)
+  latitude        Float?
+  longitude       Float?
+  address         String?
+  phone           String
+  portfolio       String[]
+  idProof         String?
+  certificate     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  bookings        Booking[]     @relation("ProviderBookings")
+  messages        Message[]
+  earnings        Earning[]
+}
+
+enum ServiceType {
+  BARBER
+  PLUMBER
+  ELECTRICIAN
+  CLEANER
+  CARPENTER
+  PAINTER
+  AC_REPAIR
+  APPLIANCE_REPAIR
+  PEST_CONTROL
+  BEAUTICIAN
+  MASSAGE
+  YOGA_TRAINER
+  HOME_NURSE
+  TUTOR
+}
+
+// ============ BOOKING MODELS ============
+
+model Booking {
+  id                  String        @id @default(cuid())
+  bookingNumber       String        @unique
+  
+  // Customer details
+  customerId          String
+  customer            User          @relation(fields: [customerId], references: [id])
+  customerPhone       String
+  customerAddress     Json          // {street, city, state, pincode, latitude, longitude}
+  
+  // Provider details
+  providerId          String?
+  provider            ServiceProvider? @relation("ProviderBookings", fields: [providerId], references: [id])
+  
+  // Service details
+  serviceType         ServiceType
+  serviceName         String
+  serviceDescription  String?       @db.Text
+  specialInstructions String?       @db.Text
+  
+  // Scheduling
+  scheduledDate       DateTime
+  scheduledTime       String
+  estimatedDuration   Int           // minutes
+  
+  // Status
+  status              BookingStatus @default(PENDING)
+  
+  // Pricing
+  basePrice           Float
+  addOnPrice          Float         @default(0)
+  discount            Float         @default(0)
+  totalPrice          Float
+  
+  // Completion
+  startedAt           DateTime?
+  completedAt         DateTime?
+  beforePhotos        String[]
+  afterPhotos         String[]
+  
+  // Relations
+  messages            Message[]
+  reviews             Review[]
+  payment             Payment?
+  
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+// ============ MESSAGING MODELS ============
+
+model Message {
+  id          String      @id @default(cuid())
+  bookingId   String
+  booking     Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  senderId    String
+  senderType  SenderType
+  
+  providerId  String?
+  provider    ServiceProvider? @relation(fields: [providerId], references: [id])
+  
+  message     String      @db.Text
+  messageType MessageType @default(TEXT)
+  mediaUrl    String?
+  
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+}
+
+enum SenderType {
+  CUSTOMER
+  PROVIDER
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  LOCATION
+  CALL
+}
+
+// ============ PAYMENT MODELS ============
+
+model Payment {
+  id              String        @id @default(cuid())
+  bookingId       String        @unique
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  
+  amount          Float
+  method          PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  transactionId   String?
+  gatewayResponse Json?
+  
+  refundAmount    Float?
+  refundedAt      DateTime?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum PaymentMethod {
+  CARD
+  UPI
+  WALLET
+  COD
+  NET_BANKING
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+// ============ REVIEW MODELS ============
+
+model Review {
+  id              String   @id @default(cuid())
+  bookingId       String
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  rating          Int      // 1-5
+  comment         String?  @db.Text
+  images          String[]
+  
+  isVerified      Boolean  @default(false)
+  isApproved      Boolean  @default(true)
+  helpfulCount    Int      @default(0)
+  
+  providerResponse String? @db.Text
+  respondedAt      DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ============ ADDRESS MODEL ============
+
 model Address {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  label     String
+  
+  label     String   // Home, Office, etc.
   street    String
   city      String
   state     String
@@ -75,46 +289,65 @@ model Address {
   latitude  Float?
   longitude Float?
   isDefault Boolean  @default(false)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Booking {
-  id            String        @id @default(cuid())
-  bookingNumber String        @unique
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
-  serviceId     String
-  scheduledDate DateTime
-  scheduledTime String
-  status        BookingStatus @default(PENDING)
-  totalPrice    Float
-  address       Json
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  reviews       Review[]
-}
+// ============ NOTIFICATION MODEL ============
 
-model Review {
-  id        String   @id @default(cuid())
-  bookingId String
-  booking   Booking  @relation(fields: [bookingId], references: [id])
+model Notification {
+  id        String           @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title     String
+  message   String           @db.Text
+  type      NotificationType
+  bookingId String?
+  
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
 }
 
-enum Role {
-  CUSTOMER
-  PROVIDER
-  ADMIN
+enum NotificationType {
+  NEW_BOOKING
+  BOOKING_ACCEPTED
+  BOOKING_REJECTED
+  BOOKING_STARTED
+  BOOKING_COMPLETED
+  NEW_MESSAGE
+  PAYMENT_RECEIVED
+  REVIEW_RECEIVED
 }
 
-enum BookingStatus {
+// ============ EARNINGS MODEL ============
+
+model Earning {
+  id          String          @id @default(cuid())
+  providerId  String
+  provider    ServiceProvider @relation(fields: [providerId], references: [id])
+  
+  amount      Float
+  type        EarningType
+  description String
+  bookingId   String?
+  
+  status      EarningStatus   @default(PENDING)
+  paidAt      DateTime?
+  
+  createdAt   DateTime        @default(now())
+}
+
+enum EarningType {
+  BOOKING_PAYMENT
+  BONUS
+  TIP
+  REFERRAL
+}
+
+enum EarningStatus {
   PENDING
-  CONFIRMED
-  COMPLETED
+  PAID
   CANCELLED
 }

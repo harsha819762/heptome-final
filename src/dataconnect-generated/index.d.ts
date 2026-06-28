@@ -80,10 +80,10 @@ export interface ListCustomerBookingsData {
     serviceCategory: {
       name: string;
     };
-      partner?: {
-        name: string;
-        phoneNumber: string;
-      };
+    partner?: {
+      name: string;
+      phoneNumber: string;
+    };
   } & Booking_Key)[];
 }
 
