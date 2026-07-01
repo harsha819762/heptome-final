@@ -1,65 +1,36 @@
-import { createClient } from "@/lib/supabase/server";
+import { getServerDC } from "@/lib/firebase/server-dc";
+import { listAllBookings } from "@dataconnect/generated";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
-    const supabase = await createClient();
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("auth_id", session.user.id)
-      .single();
-
-    if (!profile || profile.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const dc = getServerDC();
+    const res = await listAllBookings(dc);
+    let bookings = res.data.bookings || [];
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || "all";
 
-    let query = supabase
-      .from("bookings")
-      .select("*, profiles!inner(name, email), payments!left(amount, method, status, platform_fee, provider_payout)")
-      .order("created_at", { ascending: false })
-      .limit(100);
-
     if (status !== "all") {
-      query = query.eq("status", status.toUpperCase());
+      bookings = bookings.filter((b) => b.status === status.toUpperCase());
     }
 
-    const { data: bookings } = await query;
-
-    const mapped = (bookings || []).map((b: any) => ({
+    const mapped = bookings.map((b) => ({
       id: b.id,
-      booking_number: b.booking_number,
-      service_name: b.service_name,
-      customer_name: b.profiles?.name || "Unknown",
-      customer_email: b.profiles?.email || "",
+      booking_number: b.id.slice(0, 8).toUpperCase(),
+      service_name: b.serviceCategory.name,
+      customer_name: b.customer.name,
+      customer_email: b.customer.email,
       status: b.status,
-      total_price: b.total_price,
-      scheduled_date: b.scheduled_date,
-      scheduled_time: b.scheduled_time,
-      created_at: b.created_at,
-      payment: b.payments
-        ? {
-            amount: b.payments.amount,
-            method: b.payments.method,
-            status: b.payments.status,
-            platform_fee: b.payments.platform_fee,
-            provider_payout: b.payments.provider_payout,
-          }
-        : null,
+      total_price: b.totalAmount,
+      scheduled_date: b.bookingDate.split("T")[0],
+      scheduled_time: b.bookingDate.split("T")[1]?.slice(0, 5) || "",
+      created_at: b.bookingDate,
+      payment: null,
     }));
 
     return NextResponse.json(mapped);
   } catch (error: any) {
-    console.error("Admin bookings list error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

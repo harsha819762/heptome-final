@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { useCart } from "@/context/CartContext";
 import { servicesData } from "@/data/servicesData";
 import {
@@ -29,7 +29,7 @@ interface SearchResult {
 }
 
 export default function Navbar() {
-  const { user, profile, signOut } = useSupabaseAuth();
+  const { user, profile, signOut } = useFirebaseAuth();
   const isAuthenticated = !!user;
   const { cartCount, setCartOpen } = useCart();
   const router = useRouter();
@@ -157,7 +157,7 @@ export default function Navbar() {
           {isAuthenticated && profile ? (
             <div className="relative group">
               <button className="flex items-center gap-2 p-1 pr-3 border border-gray-200 rounded-full hover:shadow-md transition-all cursor-pointer">
-                <img src={profile.image || "https://i.pravatar.cc/150"} alt={profile.name || "User"} className="w-7 h-7 rounded-full object-cover" />
+                <img src={profile.avatarUrl || user?.photoURL || "https://i.pravatar.cc/150"} alt={profile.name || "User"} className="w-7 h-7 rounded-full object-cover" />
                 <span className="text-xs font-bold text-gray-700 hidden sm:inline">{(profile.name || "User").split(" ")[0]}</span>
               </button>
               <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-xl z-50 py-1.5 hidden group-hover:block">

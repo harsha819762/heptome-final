@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { Map, type MapViewport } from "@/components/ui/map";
 import { 
   IoCallOutline, IoLocationOutline, IoCalendarOutline, 
@@ -38,12 +39,12 @@ export default function JobExecutionPage() {
   const params = useParams();
   const bookingId = params?.bookingId as string;
   const router = useRouter();
+  const { user } = useFirebaseAuth();
 
   const [isLoading, setIsLoading] = useState(true);
   const [job, setJob] = useState<BookingDetail | null>(null);
   const [isSubmitInProgress, setIsSubmitInProgress] = useState(false);
   
-  // Map viewport (default to Mumbai coordinates)
   const [viewport, setViewport] = useState<MapViewport>({
     center: [72.8777, 19.0760],
     zoom: 12,
@@ -53,7 +54,6 @@ export default function JobExecutionPage() {
 
   async function loadJobDetails() {
     try {
-      // We can query all details from a details route or from the dashboard endpoint
       const res = await fetch("/api/provider/dashboard");
       if (!res.ok) {
         throw new Error("Failed to load job details");
@@ -61,7 +61,7 @@ export default function JobExecutionPage() {
       const data = await res.json();
       
       const allJobs = [...(data.activeJobs || []), ...(data.completedJobs || [])];
-      const selected = allJobs.find((j) => j.id === bookingId);
+      const selected = allJobs.find((j: any) => j.id === bookingId);
       
       if (!selected) {
         throw new Error("Service assignment not found");
@@ -69,7 +69,6 @@ export default function JobExecutionPage() {
       
       setJob(selected);
       
-      // Update map center if coordinates are provided
       if (selected.customerAddress?.longitude && selected.customerAddress?.latitude) {
         setViewport((prev) => ({
           ...prev,
@@ -89,14 +88,19 @@ export default function JobExecutionPage() {
   }, [bookingId]);
 
   const handleUpdateStatus = async (action: "START" | "COMPLETE") => {
+    if (!user) return;
     setIsSubmitInProgress(true);
     const toastMsg = action === "START" ? "Starting service..." : "Completing service...";
     toast.loading(toastMsg, { id: "job-action" });
 
     try {
+      const token = await user.getIdToken();
       const res = await fetch(`/api/provider/jobs/${bookingId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ action }),
       });
 
@@ -117,14 +121,14 @@ export default function JobExecutionPage() {
   };
 
   const handlePhotoUploadMock = async (photoType: "before" | "after") => {
-    // Generate a beautiful mock Unsplash photo depending on type
+    if (!user) return;
     const beforeImages = [
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500", // dirty house
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500", // AC service
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500",
     ];
     const afterImages = [
-      "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=500", // clean house
-      "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500", // fixed AC
+      "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=500",
+      "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500",
     ];
     
     const candidates = photoType === "before" ? beforeImages : afterImages;
@@ -133,9 +137,13 @@ export default function JobExecutionPage() {
     toast.loading("Uploading photo...", { id: "upload-photo" });
 
     try {
+      const token = await user.getIdToken();
       const res = await fetch(`/api/provider/jobs/${bookingId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ 
           action: "UPLOAD_PHOTOS", 
           photoUrl: randomPhoto,
@@ -143,9 +151,7 @@ export default function JobExecutionPage() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to save photo");
-      }
+      if (!res.ok) throw new Error("Failed to save photo");
 
       toast.success("Photo uploaded successfully!", { id: "upload-photo" });
       await loadJobDetails();
@@ -173,7 +179,6 @@ export default function JobExecutionPage() {
   return (
     <div className="space-y-8">
       
-      {/* Job Title Card */}
       <section className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
@@ -198,13 +203,10 @@ export default function JobExecutionPage() {
         </div>
       </section>
 
-      {/* Main Details and execution split */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Left Column: Customer details, Map Directions */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Customer details card */}
           <div className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
             <h3 className="font-extrabold text-base text-[#1A1A2E] border-b pb-4">Customer Workspace Information</h3>
             
@@ -242,7 +244,6 @@ export default function JobExecutionPage() {
             </div>
           </div>
 
-          {/* Map directions */}
           <div className="bg-white border border-slate-100 rounded-3xl p-4 shadow-xs space-y-4">
             <div className="flex justify-between items-center px-2">
               <h4 className="font-extrabold text-sm text-[#1A1A2E] flex items-center gap-1.5">
@@ -255,14 +256,11 @@ export default function JobExecutionPage() {
           </div>
         </div>
 
-        {/* Right Column: Execution workflow controls */}
         <div className="space-y-6">
           
-          {/* Status timeline card */}
           <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-md space-y-6">
             <h3 className="font-extrabold text-base text-[#1A1A2E] border-b pb-3">Execution Panel</h3>
 
-            {/* Time scheduling info */}
             <div className="space-y-3.5 text-xs font-semibold text-slate-500 bg-slate-50 border p-4 rounded-2xl">
               <div className="flex justify-between">
                 <span>Scheduled Date</span>
@@ -274,7 +272,6 @@ export default function JobExecutionPage() {
               </div>
             </div>
 
-            {/* Action buttons */}
             <div className="space-y-4">
               {job.status === "ACCEPTED" && (
                 <button
@@ -288,7 +285,6 @@ export default function JobExecutionPage() {
 
               {job.status === "IN_PROGRESS" && (
                 <div className="space-y-4">
-                  {/* Photo upload blocks */}
                   <div className="grid grid-cols-2 gap-3 text-center">
                     <div className="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 hover:bg-slate-100/50 transition-colors flex flex-col justify-between min-h-[110px]">
                       <span className="text-[10px] font-black text-slate-400 uppercase">Before Photos</span>
@@ -341,7 +337,7 @@ export default function JobExecutionPage() {
                   </button>
                   {job.afterPhotos.length === 0 && (
                     <p className="text-[9px] text-red-500 font-bold text-center mt-1">
-                      ⚠️ Upload at least 1 After Photo to enable Completion.
+                      Upload at least 1 After Photo to enable Completion.
                     </p>
                   )}
                 </div>
@@ -352,13 +348,12 @@ export default function JobExecutionPage() {
                   <IoCheckmarkCircleSharp className="text-xl text-emerald-600 shrink-0 mt-0.5" />
                   <div>
                     <h5 className="font-bold">Job Execution Completed!</h5>
-                    <p className="text-[10px] text-emerald-600 mt-1 font-medium">Your work has been verified, and the platform has processed the client payout. Earning has been credited.</p>
+                    <p className="text-[10px] text-emerald-600 mt-1 font-medium">Your work has been verified, and the platform has processed the client payout.</p>
                   </div>
                 </div>
               )}
             </div>
           </div>
-          {/* Chat with Customer */}
           <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-slate-100">
               <h4 className="font-extrabold text-sm text-[#1A1A2E]">Chat with Customer</h4>

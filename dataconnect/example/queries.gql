@@ -1,4 +1,3 @@
-# List all service categories
 query ListServiceCategories @auth(level: PUBLIC, insecureReason: "Anyone can browse categories") {
   serviceCategories {
     id
@@ -9,7 +8,6 @@ query ListServiceCategories @auth(level: PUBLIC, insecureReason: "Anyone can bro
   }
 }
 
-# Get user profile details
 query GetUserProfile($id: UUID!) @auth(level: PUBLIC, insecureReason: "For profiling purposes") {
   user(id: $id) {
     id
@@ -23,7 +21,6 @@ query GetUserProfile($id: UUID!) @auth(level: PUBLIC, insecureReason: "For profi
   }
 }
 
-# List bookings for a customer
 query ListCustomerBookings($customerId: UUID!) @auth(level: PUBLIC, insecureReason: "Show customer bookings") {
   bookings(where: { customerId: { eq: $customerId } }) {
     id
@@ -41,7 +38,6 @@ query ListCustomerBookings($customerId: UUID!) @auth(level: PUBLIC, insecureReas
   }
 }
 
-# List availability for a partner
 query ListPartnerAvailability($partnerId: UUID!) @auth(level: PUBLIC, insecureReason: "Check schedule") {
   partnerAvailabilities(where: { partnerId: { eq: $partnerId } }) {
     id
@@ -51,7 +47,6 @@ query ListPartnerAvailability($partnerId: UUID!) @auth(level: PUBLIC, insecureRe
   }
 }
 
-# List reviews for a partner
 query ListPartnerReviews($partnerId: UUID!) @auth(level: PUBLIC, insecureReason: "Check partner ratings") {
   reviews(where: { partnerId: { eq: $partnerId } }) {
     id
@@ -61,6 +56,111 @@ query ListPartnerReviews($partnerId: UUID!) @auth(level: PUBLIC, insecureReason:
     customer {
       name
       avatarUrl
+    }
+  }
+}
+
+query ListAllUsers($role: String) @auth(level: PUBLIC, insecureReason: "Admin listing") {
+  users(where: { role: { eq: $role } }) {
+    id
+    name
+    email
+    role
+    phoneNumber
+    avatarUrl
+    address
+    rating
+  }
+}
+
+query ListAllBookings @auth(level: PUBLIC, insecureReason: "Admin listing") {
+  bookings(orderBy: { bookingDate: DESC }) {
+    id
+    status
+    bookingDate
+    totalAmount
+    partnerNotes
+    customer {
+      id
+      name
+      email
+    }
+    partner {
+      id
+      name
+    }
+    serviceCategory {
+      id
+      name
+    }
+  }
+}
+
+query GetBookingById($id: UUID!) @auth(level: PUBLIC, insecureReason: "Detailed view") {
+  booking(id: $id) {
+    id
+    status
+    bookingDate
+    totalAmount
+    partnerNotes
+    customerReview
+    customer {
+      id
+      name
+      email
+      phoneNumber
+      address
+    }
+    partner {
+      id
+      name
+      email
+      phoneNumber
+    }
+    serviceCategory {
+      id
+      name
+      basePrice
+    }
+  }
+}
+
+query ListProviderBookings($partnerId: UUID!) @auth(level: PUBLIC, insecureReason: "Provider dashboard") {
+  bookings(where: { partnerId: { eq: $partnerId } }, orderBy: { bookingDate: DESC }) {
+    id
+    status
+    bookingDate
+    totalAmount
+    partnerNotes
+    customer {
+      id
+      name
+      email
+      phoneNumber
+      address
+    }
+    serviceCategory {
+      id
+      name
+    }
+  }
+}
+
+query ListPendingBookings($serviceCategoryIds: [UUID!]) @auth(level: PUBLIC, insecureReason: "Provider lead board") {
+  bookings(where: { status: { eq: "PENDING" } }, orderBy: { bookingDate: DESC }) {
+    id
+    status
+    bookingDate
+    totalAmount
+    partnerNotes
+    customer {
+      id
+      name
+      address
+    }
+    serviceCategory {
+      id
+      name
     }
   }
 }

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
-import { createClient } from "@/lib/supabase/client";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { motion } from "framer-motion";
 import {
   IoCalendarOutline, IoTimeOutline, IoLocationOutline, IoBriefcaseOutline,
@@ -24,42 +23,41 @@ interface PendingJob {
 }
 
 export default function JobsBoardPage() {
-  const { user, profile } = useSupabaseAuth();
+  const { user, profile } = useFirebaseAuth();
   const router = useRouter();
-  const supabase = createClient();
 
   const [isLoading, setIsLoading] = useState(true);
   const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([]);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
-  const [providerId, setProviderId] = useState<string | null>(null);
 
   const loadPendingJobs = async () => {
-    if (!profile) return;
+    if (!user || !profile) return;
     setIsLoading(true);
 
     try {
-      const { data: sp } = await supabase
-        .from("service_providers")
-        .select("id, service_types")
-        .eq("profile_id", profile.id)
-        .single();
+      const token = await user.getIdToken();
+      const res = await fetch("/api/provider/dashboard", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      if (!sp) {
+      if (!res.ok) {
         setIsLoading(false);
         return;
       }
 
-      setProviderId(sp.id);
-
-      const { data: jobs } = await supabase
-        .from("bookings")
-        .select("*")
-        .is("provider_id", null)
-        .eq("status", "PENDING")
-        .in("service_type", sp.service_types || [])
-        .order("created_at", { ascending: false });
-
-      setPendingJobs((jobs as PendingJob[]) || []);
+      const data = await res.json();
+      setPendingJobs((data.pendingRequests || []).map((j: any) => ({
+        id: j.id,
+        booking_number: j.bookingNumber,
+        service_name: j.serviceName,
+        service_description: j.serviceDescription || "",
+        scheduled_date: j.scheduledDate,
+        scheduled_time: j.scheduledTime,
+        total_price: j.totalPrice,
+        customer_address: j.customerAddress || {},
+        service_type: "",
+        created_at: j.scheduledDate,
+      })));
     } catch (err: any) {
       toast.error("Failed to load available jobs");
     } finally {
@@ -69,48 +67,33 @@ export default function JobsBoardPage() {
 
   useEffect(() => {
     loadPendingJobs();
-  }, [profile]);
+  }, [user, profile]);
 
-  // Real-time subscription for new bookings
   useEffect(() => {
-    if (!profile) return;
-
-    const channel = supabase
-      .channel("jobs-board")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "bookings",
-          filter: "status=eq.PENDING",
-        },
-        () => {
-          loadPendingJobs();
-          toast.success("New job lead available!", { duration: 4000 });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [profile]);
+    if (!user) return;
+    const interval = setInterval(loadPendingJobs, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleAcceptJob = async (jobId: string) => {
-    if (!providerId) return;
+    if (!user) return;
     setAcceptingId(jobId);
 
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({
-          provider_id: providerId,
-          status: "ACCEPTED",
-        })
-        .eq("id", jobId);
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/provider/jobs/${jobId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: "ACCEPT" }),
+      });
 
-      if (error) throw new Error(error.message);
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to accept job");
+      }
 
       toast.success("Job accepted! Redirecting...");
       setPendingJobs((prev) => prev.filter((j) => j.id !== jobId));
@@ -133,12 +116,9 @@ export default function JobsBoardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-black text-[#1A1A2E]">
-          Available Job Leads
-        </h2>
+        <h2 className="text-xl sm:text-2xl font-black text-[#1A1A2E]">Available Job Leads</h2>
         <p className="text-gray-400 text-xs sm:text-sm font-semibold mt-1">
-          New leads appear in real-time. Review and accept service requests from
-          customers.
+          New leads appear in real-time. Review and accept service requests from customers.
         </p>
       </div>
 
@@ -149,8 +129,7 @@ export default function JobsBoardPage() {
           </div>
           <h3 className="font-extrabold text-[#1A1A2E]">All Caught Up!</h3>
           <p className="text-xs text-gray-400 font-semibold leading-relaxed">
-            No pending customer requests matching your skills. New leads will
-            appear here in real-time.
+            No pending customer requests matching your skills. New leads will appear here shortly.
           </p>
         </div>
       ) : (
@@ -164,12 +143,8 @@ export default function JobsBoardPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[10px] font-black text-gray-400 uppercase">
-                      Lead ID: #{job.booking_number}
-                    </span>
-                    <h3 className="font-extrabold text-sm sm:text-base text-[#1A1A2E] mt-0.5">
-                      {job.service_name}
-                    </h3>
+                    <span className="text-[10px] font-black text-gray-400 uppercase">Lead ID: #{job.booking_number}</span>
+                    <h3 className="font-extrabold text-sm sm:text-base text-[#1A1A2E] mt-0.5">{job.service_name}</h3>
                   </div>
                   <span className="font-extrabold text-[#2563EB] bg-blue-50 border border-blue-100 px-3 py-1 rounded-xl text-xs sm:text-sm shrink-0">
                     ₹{job.total_price}
@@ -192,8 +167,7 @@ export default function JobsBoardPage() {
                   <div className="col-span-2 flex items-start gap-2 border-t pt-2 mt-2">
                     <IoLocationOutline className="text-[#2563EB] text-base shrink-0 mt-0.5" />
                     <span className="line-clamp-1">
-                      {job.customer_address?.street || "Address on file"},{" "}
-                      {job.customer_address?.city || ""}
+                      {job.customer_address?.street || "Address on file"}
                     </span>
                   </div>
                 </div>

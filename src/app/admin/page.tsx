@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -122,7 +122,7 @@ function StatCard({ icon, label, value, sub, color }: { icon: React.ReactNode; l
 type Tab = "overview" | "users" | "providers" | "bookings";
 
 export default function AdminDashboard() {
-  const { user, profile, isLoading, signOut } = useSupabaseAuth();
+  const { user, profile, isLoading, signOut } = useFirebaseAuth();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -312,7 +312,7 @@ export default function AdminDashboard() {
         <div className="border-t border-slate-800 pt-6 mt-8 space-y-4">
           <div className="flex items-center gap-3">
             <img
-              src={profile?.image || user?.user_metadata?.avatar_url || "https://i.pravatar.cc/150"}
+              src={profile?.avatarUrl || user?.photoURL || "https://i.pravatar.cc/150"}
               alt={profile?.name || "Admin"}
               className="w-9 h-9 rounded-xl object-cover border border-slate-700 shrink-0"
             />

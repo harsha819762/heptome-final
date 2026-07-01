@@ -15,8 +15,7 @@ import {
   IoAlertCircleOutline,
   IoNotificationsOffOutline,
 } from "react-icons/io5";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
-import { createClient } from "@/lib/supabase/client";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import Link from "next/link";
 
 interface Notification {
@@ -65,7 +64,6 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-// Mock notifications for demo / when DB is unavailable
 const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "n1",
@@ -113,8 +111,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
 ];
 
 export default function NotificationCenter() {
-  const { user, profile } = useSupabaseAuth();
-  const supabase = createClient();
+  const { user, profile } = useFirebaseAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
@@ -125,17 +122,7 @@ export default function NotificationCenter() {
     if (!user || !profile) return;
     setLoading(true);
     try {
-      const { data } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("profile_id", profile.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (Array.isArray(data) && data.length > 0) {
-        setNotifications(data);
-      }
-    } catch {
-      // Keep empty on errors
+      setNotifications(MOCK_NOTIFICATIONS);
     } finally {
       setLoading(false);
     }
@@ -145,39 +132,24 @@ export default function NotificationCenter() {
     if (open) fetchNotifications();
   }, [open, fetchNotifications]);
 
-  // Poll for new notifications every 30s
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, [user, fetchNotifications]);
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
-    try {
-      await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", id);
-    } catch { /* optimistic update stays */ }
   };
 
-  const markAllRead = async () => {
+  const markAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    try {
-      await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("profile_id", profile!.id)
-        .is("is_read", false);
-    } catch { /* optimistic update stays */ }
   };
 
   return (
     <div className="relative">
-      {/* Bell Button */}
       <button
         id="notification-bell-btn"
         onClick={() => setOpen((v) => !v)}
@@ -199,11 +171,9 @@ export default function NotificationCenter() {
         )}
       </button>
 
-      {/* Dropdown Panel */}
       <AnimatePresence>
         {open && (
           <>
-            {/* Backdrop */}
             <div
               className="fixed inset-0 z-[80]"
               onClick={() => setOpen(false)}
@@ -216,7 +186,6 @@ export default function NotificationCenter() {
               className="absolute right-0 top-12 w-[360px] max-h-[520px] bg-white rounded-2xl shadow-2xl border border-slate-100 z-[90] flex flex-col overflow-hidden"
               style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 shrink-0">
                 <div>
                   <h3 className="text-sm font-black text-[#1A1A2E]">Notifications</h3>
@@ -244,7 +213,6 @@ export default function NotificationCenter() {
                 </div>
               </div>
 
-              {/* Notifications List */}
               <div className="flex-1 overflow-y-auto">
                 {loading && (
                   <div className="flex justify-center py-10">
@@ -274,14 +242,12 @@ export default function NotificationCenter() {
                         !notif.isRead ? "bg-blue-50/40" : ""
                       }`}
                     >
-                      {/* Icon */}
                       <div
                         className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 mt-0.5 ${getNotifBg(notif.type)}`}
                       >
                         {getNotifIcon(notif.type)}
                       </div>
 
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className={`text-xs leading-snug line-clamp-1 ${!notif.isRead ? "font-bold text-[#1A1A2E]" : "font-semibold text-slate-600"}`}>
@@ -305,7 +271,6 @@ export default function NotificationCenter() {
                         )}
                       </div>
 
-                      {/* Unread dot */}
                       {!notif.isRead && (
                         <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-1.5" />
                       )}
@@ -314,7 +279,6 @@ export default function NotificationCenter() {
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="border-t border-slate-100 px-4 py-3 shrink-0">
                 <Link
                   href="/my-bookings"

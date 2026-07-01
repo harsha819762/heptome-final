@@ -3,14 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { motion } from "framer-motion";
 import {
   User, Calendar, MapPin, Star, Settings, LogOut, Home, Clock, CheckCircle, Loader2,
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, profile, isLoading, signOut } = useSupabaseAuth();
+  const { user, profile, isLoading, signOut } = useFirebaseAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -62,8 +62,8 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-black text-white flex items-center justify-center text-xl font-bold overflow-hidden">
-              {profile.image ? (
-                <img src={profile.image} alt={profile.name || "User"} className="w-full h-full object-cover" />
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name || "User"} className="w-full h-full object-cover" />
               ) : (
                 profile.name?.charAt(0)?.toUpperCase() || "U"
               )}

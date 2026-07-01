@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { useBookingStore } from "@/store/useBookingStore";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { updateUserProfile } from "@dataconnect/generated";
 import { motion } from "framer-motion";
 import {
   IoPersonOutline, IoLocationOutline, IoPricetagOutline, IoPencilOutline,
@@ -19,8 +19,7 @@ const AVAILABLE_COUPONS = [
 ];
 
 export default function ProfilePage() {
-  const { user, profile, isLoading, refreshProfile } = useSupabaseAuth();
-  const supabase = createClient();
+  const { user, profile, isLoading, refreshProfile } = useFirebaseAuth();
   const { bookings } = useBookingStore();
   const router = useRouter();
 
@@ -40,7 +39,7 @@ export default function ProfilePage() {
     if (profile) {
       setName(profile.name || "");
       setEmail(profile.email || "");
-      setPhone(profile.phone || "");
+      setPhone(profile.phoneNumber || "");
     }
   }, [profile]);
 
@@ -57,12 +56,11 @@ export default function ProfilePage() {
 
     toast.loading("Saving profile...", { id: "profile-update" });
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ name, email, phone: phone || null })
-        .eq("id", profile!.id);
-
-      if (error) throw new Error(error.message);
+      await updateUserProfile({
+        id: user!.uid,
+        name,
+        phoneNumber: phone || null,
+      });
 
       await refreshProfile();
       setIsEditing(false);
@@ -115,7 +113,7 @@ export default function ProfilePage() {
         <div className="md:col-span-1 space-y-6">
           <div className="bg-[#F9FAFB] border border-gray-200 rounded-3xl p-6 text-center space-y-4 shadow-sm">
             <div className="relative inline-block mx-auto group">
-              <img src={profile.image || "https://i.pravatar.cc/150"} alt={profile.name || "User"}
+              <img src={profile.avatarUrl || "https://i.pravatar.cc/150"} alt={profile.name || "User"}
                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md mx-auto" />
               <button
                 className="absolute bottom-0 right-0 p-2 bg-[#2563EB] text-white rounded-full border-2 border-white hover:bg-[#1D4ED8] transition-colors cursor-pointer">
@@ -178,8 +176,8 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
-                      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-xs font-semibold text-[#1A1A2E] outline-none focus:border-[#2563EB]" />
+                      <input type="email" required value={email} disabled
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs font-semibold text-gray-400 outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1">Phone</label>
@@ -188,7 +186,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex gap-3 pt-2">
-                    <button type="button" onClick={() => { setName(profile.name || ""); setEmail(profile.email); setPhone(profile.phone || ""); setIsEditing(false); }}
+                    <button type="button" onClick={() => { setName(profile.name || ""); setEmail(profile.email); setPhone(profile.phoneNumber || ""); setIsEditing(false); }}
                       className="flex-1 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl py-2.5 text-xs cursor-pointer">Cancel</button>
                     <button type="submit" className="flex-1 bg-[#2563EB] text-white rounded-xl py-2.5 text-xs font-bold cursor-pointer">Save Details</button>
                   </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useCart } from "@/context/CartContext";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { IoCloseOutline, IoTrashOutline, IoAdd, IoRemove } from "react-icons/io5";
@@ -24,7 +24,7 @@ export default function CartSidebar() {
     removeCoupon,
   } = useCart();
 
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const isAuthenticated = !!user;
   const router = useRouter();
   const [couponCode, setCouponCode] = useState("");

@@ -11,7 +11,7 @@ import {
   IoCheckmarkDone,
   IoCheckmark,
 } from "react-icons/io5";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 
 interface Message {
   id: string;
@@ -107,7 +107,7 @@ export default function ChatWindow({
   isProvider = false,
   inline = false,
 }: ChatWindowProps) {
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const [open, setOpen] = useState(inline);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -163,7 +163,7 @@ export default function ChatWindow({
     const optimisticMsg: Message = {
       id: `opt-${Date.now()}`,
       bookingId,
-      senderId: user?.id || "customer",
+      senderId: user?.uid || "customer",
       senderType: isProvider ? "PROVIDER" : "CUSTOMER",
       message: text,
       messageType: "TEXT",

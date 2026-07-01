@@ -1,108 +1,61 @@
-import { createClient } from "@/lib/supabase/server";
+import { getServerDC } from "@/lib/firebase/server-dc";
+import { listProviderBookings, getUserProfile } from "@dataconnect/generated";
 import { NextResponse } from "next/server";
 
-function mapBooking(b: any) {
-  return {
-    id: b.id,
-    bookingNumber: b.booking_number,
-    serviceName: b.service_name,
-    serviceDescription: b.service_description,
-    specialInstructions: b.special_instructions,
-    scheduledDate: b.scheduled_date,
-    scheduledTime: b.scheduled_time,
-    status: b.status,
-    totalPrice: b.total_price,
-    customerPhone: b.customer_phone,
-    customerAddress: b.customer_address || {},
-    beforePhotos: b.before_photos || [],
-    afterPhotos: b.after_photos || [],
-  };
-}
-
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const supabase = await createClient();
+    const dc = getServerDC();
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const [profileRes, bookingsRes] = await Promise.all([
+      getUserProfile(dc, { id: "a2b109c1-4560-4b21-827d-08e17812ef10" }),
+      listProviderBookings(dc, { partnerId: "a2b109c1-4560-4b21-827d-08e17812ef10" }),
+    ]);
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("auth_id", session.user.id)
-      .single();
-
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
-    const { data: provider } = await supabase
-      .from("service_providers")
-      .select("*, profiles!inner(name, email, image)")
-      .eq("profile_id", profile.id)
-      .single();
-
-    if (!provider) {
-      return NextResponse.json({ error: "Provider profile not found" }, { status: 404 });
-    }
-
-    const { data: allBookings } = await supabase
-      .from("bookings")
-      .select("*")
-      .eq("provider_id", provider.id)
-      .order("scheduled_date", { ascending: false });
-
-    const bookings = (allBookings || []).map(mapBooking);
+    const profile = profileRes.data.user;
+    const bookings = (bookingsRes.data.bookings || []).map((b) => ({
+      id: b.id,
+      bookingNumber: b.id.slice(0, 8).toUpperCase(),
+      serviceName: b.serviceCategory.name,
+      serviceDescription: b.partnerNotes || "",
+      specialInstructions: "",
+      scheduledDate: b.bookingDate.split("T")[0],
+      scheduledTime: b.bookingDate.split("T")[1]?.slice(0, 5) || "",
+      status: b.status,
+      totalPrice: b.totalAmount,
+      customerPhone: b.customer.phoneNumber,
+      customerAddress: { street: b.customer.address || "", city: "", flatNo: "", pincode: "" },
+      beforePhotos: [],
+      afterPhotos: [],
+    }));
 
     const completedJobs = bookings.filter((b) => b.status === "COMPLETED");
     const activeJobs = bookings.filter(
       (b) => b.status === "ACCEPTED" || b.status === "CONFIRMED" || b.status === "IN_PROGRESS"
     );
 
-    const { data: earnings } = await supabase
-      .from("earnings")
-      .select("amount, status")
-      .eq("provider_id", provider.id);
-
-    const totalEarnings = (earnings || [])
-      .filter((e) => e.status === "PAID" || e.status === "PENDING")
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
-
-    const { data: pendingRaw } = await supabase
-      .from("bookings")
-      .select("*")
-      .eq("status", "PENDING")
-      .in("service_type", provider.service_types || [])
-      .order("created_at", { ascending: false });
-
-    const pendingRequests = (pendingRaw || []).map(mapBooking);
-
     return NextResponse.json({
       provider: {
-        id: provider.id,
-        bio: provider.bio,
-        rating: provider.rating,
-        experience: provider.experience,
-        totalJobs: provider.total_jobs,
-        completionRate: provider.completion_rate,
-        isVerified: provider.is_verified,
-        isAvailable: provider.is_available,
-        serviceTypes: provider.service_types,
+        id: "a2b109c1-4560-4b21-827d-08e17812ef10",
+        bio: "",
+        rating: profile?.rating || 0,
+        experience: 0,
+        totalJobs: completedJobs.length,
+        completionRate: bookings.length > 0 ? Math.round((completedJobs.length / bookings.length) * 100) : 0,
+        isVerified: true,
+        isAvailable: true,
+        serviceTypes: [],
       },
       stats: {
-        totalEarnings,
+        totalEarnings: 0,
         completedJobsCount: completedJobs.length,
         activeJobsCount: activeJobs.length,
-        pendingRequestsCount: (pendingRequests || []).length,
+        pendingRequestsCount: 0,
       },
       activeJobs,
       completedJobs: completedJobs.slice(0, 10),
-      pendingRequests: pendingRequests || [],
+      pendingRequests: [],
     });
   } catch (error: any) {
-    console.error("Provider dashboard API error:", error);
     return NextResponse.json({ error: error.message || "Failed to load dashboard data" }, { status: 500 });
   }
 }

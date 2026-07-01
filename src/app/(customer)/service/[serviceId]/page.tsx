@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useBookingStore } from "@/store/useBookingStore";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { servicesData, professionalsData } from "@/data/servicesData";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -46,7 +46,7 @@ export default function ServiceDetailPage() {
   const router = useRouter();
   const { addToCart, cartItems } = useCart();
   const { setBookingField, setBookingStep } = useBookingStore();
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const isAuthenticated = !!user;
 
   // Find service

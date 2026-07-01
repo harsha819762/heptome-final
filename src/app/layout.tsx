@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SupabaseAuthProvider } from "@/context/SupabaseAuthProvider";
+import { FirebaseAuthProvider } from "@/context/FirebaseAuthProvider";
 
 export const metadata: Metadata = {
   title: "Heptome - Professional Home Services at Your Doorstep",
@@ -28,7 +28,7 @@ export default function RootLayout({
         />
       </head>
       <body className="h-full antialiased font-sans bg-white text-[#1A1A2E]">
-        <SupabaseAuthProvider>{children}</SupabaseAuthProvider>
+        <FirebaseAuthProvider>{children}</FirebaseAuthProvider>
       </body>
     </html>
   );

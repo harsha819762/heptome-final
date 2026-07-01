@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useBookingStore } from "@/store/useBookingStore";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { professionalsData } from "@/data/servicesData";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -50,7 +50,7 @@ const TIME_SLOTS = [
 
 export default function BookingPage() {
   const router = useRouter();
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const { cartItems, cartTotal, discount, subtotal, serviceFee, coupon, applyCoupon, removeCoupon, clearCart } = useCart();
   const { 
     bookingStep, setBookingStep, bookingData, setBookingField,

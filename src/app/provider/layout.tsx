@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
-import { createClient } from "@/lib/supabase/client";
+import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
+import { updateUserProfile } from "@dataconnect/generated";
 import {
   IoSpeedometerOutline, IoListOutline, IoPersonOutline,
   IoLogOutOutline, IoBuildOutline, IoCheckmarkCircleSharp,
@@ -26,10 +26,9 @@ export default function ProviderLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, profile, isLoading, signOut, refreshProfile } = useSupabaseAuth();
+  const { user, profile, isLoading, signOut, refreshProfile } = useFirebaseAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
 
   const [serviceType, setServiceType] = useState("CLEANER");
   const [experience, setExperience] = useState("3");
@@ -37,22 +36,6 @@ export default function ProviderLayout({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [isOnboardingSubmit, setIsOnboardingSubmit] = useState(false);
-  const [providerId, setProviderId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (profile?.role === "PROVIDER" && user) {
-      fetchProviderProfile();
-    }
-  }, [profile, user]);
-
-  const fetchProviderProfile = async () => {
-    const { data } = await supabase
-      .from("service_providers")
-      .select("id")
-      .eq("profile_id", profile!.id)
-      .single();
-    if (data) setProviderId(data.id);
-  };
 
   if (isLoading) {
     return (
@@ -80,25 +63,13 @@ export default function ProviderLayout({
     toast.loading("Submitting application...", { id: "onboard" });
 
     try {
-      const { error } = await supabase.from("service_providers").insert({
-        profile_id: profile!.id,
-        service_types: [serviceType],
-        experience: parseInt(experience),
-        bio: bio || "Professional Heptome service provider.",
-        phone,
+      await updateUserProfile({
+        id: user.uid,
+        name: profile?.name || undefined,
+        phoneNumber: phone,
         address,
-        is_verified: true,
-        is_available: true,
-        rating: 5.0,
-        completion_rate: 100,
+        avatarUrl: profile?.avatarUrl || undefined,
       });
-
-      if (error) throw new Error(error.message);
-
-      await supabase
-        .from("profiles")
-        .update({ role: "PROVIDER" })
-        .eq("id", profile!.id);
 
       await refreshProfile();
 
@@ -204,7 +175,7 @@ export default function ProviderLayout({
 
         <div className="border-t border-gray-800 pt-6 mt-8 space-y-4">
           <div className="flex items-center gap-3">
-            <img src={profile?.image || "https://i.pravatar.cc/150"} alt={profile?.name || "Provider"}
+            <img src={profile?.avatarUrl || "https://i.pravatar.cc/150"} alt={profile?.name || "Provider"}
               className="w-9 h-9 rounded-xl object-cover border border-gray-700 shrink-0" />
             <div className="overflow-hidden">
               <p className="text-xs font-black text-white leading-none line-clamp-1">{profile?.name}</p>
@@ -213,8 +184,7 @@ export default function ProviderLayout({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Link href="/"
-              className="flex items-center justify-center gap-2 border border-gray-700 hover:bg-gray-800 hover:text-white rounded-xl py-2 px-3 text-[10px] font-extrabold text-gray-400 transition-colors">
+            <Link href="/" className="flex items-center justify-center gap-2 border border-gray-700 hover:bg-gray-800 hover:text-white rounded-xl py-2 px-3 text-[10px] font-extrabold text-gray-400 transition-colors">
               ← Client Mode
             </Link>
             <button onClick={async () => { await signOut(); router.push("/login"); }}

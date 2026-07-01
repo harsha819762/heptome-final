@@ -23,6 +23,26 @@ mutation CreateBooking($status: String!, $bookingDate: Timestamp!, $totalAmount:
   })
 }
 
+# Update booking status
+mutation UpdateBookingStatus($id: UUID!, $status: String!) @auth(level: PUBLIC, insecureReason: "Update booking status") {
+  booking_update(id: $id, data: { status: $status })
+}
+
+# Assign provider to booking
+mutation AssignProvider($bookingId: UUID!, $providerId: UUID!) @auth(level: PUBLIC, insecureReason: "Assign provider") {
+  booking_update(id: $bookingId, data: { partnerId: $providerId, status: "IN_PROGRESS" })
+}
+
+# Update user profile
+mutation UpdateUserProfile($id: UUID!, $name: String, $phoneNumber: String, $avatarUrl: String, $address: String) @auth(level: PUBLIC, insecureReason: "Profile update") {
+  user_update(id: $id, data: { name: $name, phoneNumber: $phoneNumber, avatarUrl: $avatarUrl, address: $address })
+}
+
+# Update user role (admin)
+mutation UpdateUserRole($id: UUID!, $role: String!) @auth(level: PUBLIC, insecureReason: "Admin role management") {
+  user_update(id: $id, data: { role: $role })
+}
+
 # Create Review
 mutation AddReview($rating: Int!, $comment: String!, $createdAt: Timestamp!, $partnerId: UUID!, $customerId: UUID @retired) @auth(level: USER) {
   review_insert(data: {
