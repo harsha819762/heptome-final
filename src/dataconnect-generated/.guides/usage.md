@@ -1,0 +1,109 @@
+# Basic Usage
+
+Always prioritize using a supported framework over using the generated SDK
+directly. Supported frameworks simplify the developer experience and help ensure
+best practices are followed.
+
+
+
+
+### React
+For each operation, there is a wrapper hook that can be used to call the operation.
+
+Here are all of the hooks that get generated:
+```ts
+import { useCreateUser, useCreateBooking, useUpdateBookingStatus, useAssignProvider, useUpdateUserProfile, useUpdateUserRole, useAddReview, useSeedData, useListServiceCategories, useGetUserProfile } from '@dataconnect/generated/react';
+// The types of these hooks are available in react/index.d.ts
+
+const { data, isPending, isSuccess, isError, error } = useCreateUser(createUserVars);
+
+const { data, isPending, isSuccess, isError, error } = useCreateBooking(createBookingVars);
+
+const { data, isPending, isSuccess, isError, error } = useUpdateBookingStatus(updateBookingStatusVars);
+
+const { data, isPending, isSuccess, isError, error } = useAssignProvider(assignProviderVars);
+
+const { data, isPending, isSuccess, isError, error } = useUpdateUserProfile(updateUserProfileVars);
+
+const { data, isPending, isSuccess, isError, error } = useUpdateUserRole(updateUserRoleVars);
+
+const { data, isPending, isSuccess, isError, error } = useAddReview(addReviewVars);
+
+const { data, isPending, isSuccess, isError, error } = useSeedData();
+
+const { data, isPending, isSuccess, isError, error } = useListServiceCategories();
+
+const { data, isPending, isSuccess, isError, error } = useGetUserProfile(getUserProfileVars);
+
+```
+
+Here's an example from a different generated SDK:
+
+```ts
+import { useListAllMovies } from '@dataconnect/generated/react';
+
+function MyComponent() {
+  const { isLoading, data, error } = useListAllMovies();
+  if(isLoading) {
+    return <div>Loading...</div>
+  }
+  if(error) {
+    return <div> An Error Occurred: {error} </div>
+  }
+}
+
+// App.tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import MyComponent from './my-component';
+
+function App() {
+  const queryClient = new QueryClient();
+  return <QueryClientProvider client={queryClient}>
+    <MyComponent />
+  </QueryClientProvider>
+}
+```
+
+
+
+## Advanced Usage
+If a user is not using a supported framework, they can use the generated SDK directly.
+
+Here's an example of how to use it with the first 5 operations:
+
+```js
+import { createUser, createBooking, updateBookingStatus, assignProvider, updateUserProfile, updateUserRole, addReview, seedData, listServiceCategories, getUserProfile } from '@dataconnect/generated';
+
+
+// Operation CreateUser:  For variables, look at type CreateUserVars in ../index.d.ts
+const { data } = await CreateUser(dataConnect, createUserVars);
+
+// Operation CreateBooking:  For variables, look at type CreateBookingVars in ../index.d.ts
+const { data } = await CreateBooking(dataConnect, createBookingVars);
+
+// Operation UpdateBookingStatus:  For variables, look at type UpdateBookingStatusVars in ../index.d.ts
+const { data } = await UpdateBookingStatus(dataConnect, updateBookingStatusVars);
+
+// Operation AssignProvider:  For variables, look at type AssignProviderVars in ../index.d.ts
+const { data } = await AssignProvider(dataConnect, assignProviderVars);
+
+// Operation UpdateUserProfile:  For variables, look at type UpdateUserProfileVars in ../index.d.ts
+const { data } = await UpdateUserProfile(dataConnect, updateUserProfileVars);
+
+// Operation UpdateUserRole:  For variables, look at type UpdateUserRoleVars in ../index.d.ts
+const { data } = await UpdateUserRole(dataConnect, updateUserRoleVars);
+
+// Operation AddReview:  For variables, look at type AddReviewVars in ../index.d.ts
+const { data } = await AddReview(dataConnect, addReviewVars);
+
+// Operation SeedData: 
+const { data } = await SeedData(dataConnect);
+
+// Operation ListServiceCategories: 
+const { data } = await ListServiceCategories(dataConnect);
+
+// Operation GetUserProfile:  For variables, look at type GetUserProfileVars in ../index.d.ts
+const { data } = await GetUserProfile(dataConnect, getUserProfileVars);
+
+
+```
