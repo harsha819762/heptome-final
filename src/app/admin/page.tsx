@@ -24,6 +24,7 @@ interface DashStats {
   completedBookings: number;
   pendingBookings: number;
   totalRevenue: number;
+  totalPlatformRevenue?: number;
 }
 
 interface User {
@@ -52,31 +53,16 @@ interface Provider {
   user: { name?: string; email: string; image?: string };
 }
 
-// ─── MOCK DATA (used when DB is unavailable) ─────────────────────────────────
-
-const MOCK_STATS: DashStats = {
-  totalUsers: 1247,
-  totalProviders: 312,
-  pendingProviders: 18,
-  totalBookings: 5890,
-  completedBookings: 4210,
-  pendingBookings: 143,
-  totalRevenue: 2847500,
+const EMPTY_STATS: DashStats = {
+  totalUsers: 0,
+  totalProviders: 0,
+  pendingProviders: 0,
+  totalBookings: 0,
+  completedBookings: 0,
+  pendingBookings: 0,
+  totalRevenue: 0,
+  totalPlatformRevenue: 0,
 };
-
-const MOCK_USERS: User[] = [
-  { id: "u1", name: "Rahul Sharma", email: "rahul@example.com", role: "CUSTOMER", isVerified: true, image: "https://randomuser.me/api/portraits/men/1.jpg", createdAt: new Date(Date.now() - 86400000 * 3).toISOString(), _count: { bookings: 5 } },
-  { id: "u2", name: "Priya Singh", email: "priya@example.com", role: "PROVIDER", isVerified: true, image: "https://randomuser.me/api/portraits/women/2.jpg", createdAt: new Date(Date.now() - 86400000 * 7).toISOString(), _count: { bookings: 0 } },
-  { id: "u3", name: "Amit Patel", email: "amit@example.com", role: "CUSTOMER", isVerified: false, image: "https://randomuser.me/api/portraits/men/3.jpg", createdAt: new Date(Date.now() - 86400000 * 1).toISOString(), _count: { bookings: 2 } },
-  { id: "u4", name: "Sneha Gupta", email: "sneha@example.com", role: "PROVIDER", isVerified: false, image: "https://randomuser.me/api/portraits/women/4.jpg", createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), _count: { bookings: 0 } },
-  { id: "u5", name: "Vikram Rao", email: "vikram@example.com", role: "CUSTOMER", isVerified: true, image: "https://randomuser.me/api/portraits/men/5.jpg", createdAt: new Date(Date.now() - 86400000 * 14).toISOString(), _count: { bookings: 12 } },
-];
-
-const MOCK_PROVIDERS: Provider[] = [
-  { id: "p1", userId: "u2", isVerified: false, experience: 5, rating: 0, totalJobs: 0, phone: "9876543210", address: "Mumbai, Andheri", serviceTypes: ["PLUMBER"], createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), user: { name: "Dinesh Kumar", email: "dinesh@example.com", image: "https://randomuser.me/api/portraits/men/10.jpg" } },
-  { id: "p2", userId: "u4", isVerified: false, experience: 3, rating: 0, totalJobs: 0, phone: "9123456789", address: "Bangalore, HSR Layout", serviceTypes: ["BEAUTICIAN"], createdAt: new Date(Date.now() - 86400000 * 1).toISOString(), user: { name: "Meera Nair", email: "meera@example.com", image: "https://randomuser.me/api/portraits/women/11.jpg" } },
-  { id: "p3", userId: "u6", isVerified: false, experience: 8, rating: 0, totalJobs: 0, phone: "9987654321", address: "Delhi, Saket", serviceTypes: ["ELECTRICIAN", "AC_REPAIR"], createdAt: new Date(Date.now() - 3600000 * 5).toISOString(), user: { name: "Suresh Yadav", email: "suresh@example.com", image: "https://randomuser.me/api/portraits/men/12.jpg" } },
-];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -140,9 +126,9 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const [stats, setStats] = useState<DashStats>(MOCK_STATS);
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [providers, setProviders] = useState<Provider[]>(MOCK_PROVIDERS);
+  const [stats, setStats] = useState<DashStats>(EMPTY_STATS);
+  const [users, setUsers] = useState<User[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [providerFilter, setProviderFilter] = useState<"all" | "pending" | "verified">("pending");
@@ -158,7 +144,7 @@ export default function AdminDashboard() {
         const data = await res.json();
         setStats(data.stats);
       }
-    } catch { /* use mock */ }
+    } catch {}
     setLoading(false);
   }, []);
 
@@ -167,9 +153,9 @@ export default function AdminDashboard() {
       const res = await fetch(`/api/admin/users?search=${searchQuery}`);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) setUsers(data);
+        if (Array.isArray(data)) setUsers(data);
       }
-    } catch { /* use mock */ }
+    } catch {}
   }, [searchQuery]);
 
   const fetchProviders = useCallback(async () => {
@@ -177,9 +163,9 @@ export default function AdminDashboard() {
       const res = await fetch(`/api/admin/providers?filter=${providerFilter}`);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) setProviders(data);
+        if (Array.isArray(data)) setProviders(data);
       }
-    } catch { /* use mock */ }
+    } catch {}
   }, [providerFilter]);
 
   const fetchBookings = useCallback(async () => {
@@ -189,13 +175,23 @@ export default function AdminDashboard() {
         const data = await res.json();
         if (Array.isArray(data)) setBookings(data);
       }
-    } catch { /* use empty */ }
+    } catch {}
   }, [bookingStatusFilter]);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
   useEffect(() => { if (activeTab === "users") fetchUsers(); }, [activeTab, fetchUsers]);
   useEffect(() => { if (activeTab === "providers") fetchProviders(); }, [activeTab, fetchProviders]);
   useEffect(() => { if (activeTab === "bookings") fetchBookings(); }, [activeTab, fetchBookings]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchDashboard();
+      if (activeTab === "users") fetchUsers();
+      if (activeTab === "providers") fetchProviders();
+      if (activeTab === "bookings") fetchBookings();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [activeTab, fetchDashboard, fetchUsers, fetchProviders, fetchBookings]);
 
   // Auth guard
   if (isLoading) {
@@ -388,10 +384,11 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Secondary Stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard icon={<IoAlertCircleOutline className="text-orange-500" />} label="Pending Verifications" value={stats.pendingProviders} color="bg-orange-50" />
                   <StatCard icon={<IoCalendarOutline className="text-blue-500" />} label="Pending Bookings" value={stats.pendingBookings} color="bg-blue-50" />
                   <StatCard icon={<IoTrendingUpOutline className="text-emerald-600" />} label="Completion Rate" value={`${stats.totalBookings > 0 ? Math.round((stats.completedBookings / stats.totalBookings) * 100) : 71}%`} color="bg-emerald-50" />
+                  <StatCard icon={<IoCardOutline className="text-indigo-600" />} label="Platform Credits" value={`₹${formatNumber(stats.totalPlatformRevenue || 0)}`} color="bg-indigo-50" />
                 </div>
 
                 {/* Pending Verification Alert */}
@@ -435,7 +432,7 @@ export default function AdminDashboard() {
                     </button>
                   </div>
                   <div className="divide-y divide-slate-50">
-                    {(users.length > 0 ? users : MOCK_USERS).slice(0, 5).map((u) => (
+                    {users.slice(0, 5).map((u) => (
                       <div key={u.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors">
                         <img
                           src={u.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || u.email)}`}

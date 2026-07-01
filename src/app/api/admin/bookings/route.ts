@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 
     let query = supabase
       .from("bookings")
-      .select("*, profiles!inner(name, email)")
+      .select("*, profiles!inner(name, email), payments!left(amount, method, status, platform_fee, provider_payout)")
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -46,6 +46,15 @@ export async function GET(req: Request) {
       scheduled_date: b.scheduled_date,
       scheduled_time: b.scheduled_time,
       created_at: b.created_at,
+      payment: b.payments
+        ? {
+            amount: b.payments.amount,
+            method: b.payments.method,
+            status: b.payments.status,
+            platform_fee: b.payments.platform_fee,
+            provider_payout: b.payments.provider_payout,
+          }
+        : null,
     }));
 
     return NextResponse.json(mapped);

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useBookingStore } from "@/store/useBookingStore";
+import { useSupabaseAuth } from "@/context/SupabaseAuthProvider";
 import { professionalsData } from "@/data/servicesData";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -29,6 +30,15 @@ const getNext7Days = () => {
   return days;
 };
 
+const CATEGORY_TO_SERVICE_TYPE: Record<number, string> = {
+  1: "BEAUTICIAN",
+  2: "BARBER",
+  3: "AC_REPAIR",
+  4: "CLEANER",
+  5: "ELECTRICIAN",
+  6: "PLUMBER",
+};
+
 const TIME_SLOTS = [
   { time: "09:00 AM", period: "Morning" },
   { time: "11:00 AM", period: "Morning" },
@@ -40,6 +50,7 @@ const TIME_SLOTS = [
 
 export default function BookingPage() {
   const router = useRouter();
+  const { user } = useSupabaseAuth();
   const { cartItems, cartTotal, discount, subtotal, serviceFee, coupon, applyCoupon, removeCoupon, clearCart } = useCart();
   const { 
     bookingStep, setBookingStep, bookingData, setBookingField,
@@ -121,19 +132,62 @@ export default function BookingPage() {
     if (success) setCouponInput("");
   };
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
     if (!bookingData.payment) {
       toast.error("Please select a payment method");
       return;
     }
-    // Calculate final total (including professional extra fee if any)
+    if (!user) {
+      toast.error("Please login to confirm booking");
+      router.push("/login?callbackUrl=/booking");
+      return;
+    }
+
     const proFee = bookingData.professional ? bookingData.professional.price : 0;
     const finalAmount = cartTotal + proFee;
+    const firstItem = cartItems[0];
 
-    const details = confirmBooking(cartItems, finalAmount);
-    setConfirmedBookingDetails(details);
-    clearCart();
-    setBookingStep(5);
+    toast.loading("Creating your booking...", { id: "create-booking" });
+
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          service_type: CATEGORY_TO_SERVICE_TYPE[firstItem?.catId || 4] || "CLEANER",
+          service_name: firstItem?.name || "Home Service",
+          service_description: firstItem?.description || "",
+          special_instructions: "",
+          scheduled_date: bookingData.date,
+          scheduled_time: bookingData.timeSlot,
+          estimated_duration: 60,
+          base_price: finalAmount,
+          add_on_price: 0,
+          discount: discount || 0,
+          total_price: finalAmount,
+          address: bookingData.address,
+          payment_method: bookingData.payment,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create booking");
+      }
+
+      const data = await res.json();
+      const details = confirmBooking(cartItems, finalAmount);
+      setConfirmedBookingDetails({ ...details, id: data.booking.booking_number });
+      clearCart();
+      setBookingStep(5);
+      toast.success("Booking created successfully!", { id: "create-booking" });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create booking. Saved locally.", { id: "create-booking" });
+      const details = confirmBooking(cartItems, finalAmount);
+      setConfirmedBookingDetails(details);
+      clearCart();
+      setBookingStep(5);
+    }
   };
 
   const handleReturnHome = () => {

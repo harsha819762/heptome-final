@@ -55,6 +55,12 @@ export async function GET() {
 
     const totalRevenue = revenueData?.reduce((sum, b) => sum + (b.total_price || 0), 0) || 0;
 
+    const { data: platformFees } = await supabase
+      .from("payments")
+      .select("platform_fee")
+      .in("status", ["SUCCESS", "PENDING"]);
+    const totalPlatformRevenue = platformFees?.reduce((sum, p) => sum + (p.platform_fee || 0), 0) || 0;
+
     const { data: recentUsers } = await supabase
       .from("profiles")
       .select("id, name, email, role, is_verified, image, created_at")
@@ -77,6 +83,7 @@ export async function GET() {
         completedBookings: completedBookings || 0,
         pendingBookings: pendingBookings || 0,
         totalRevenue,
+        totalPlatformRevenue,
       },
       recentUsers: recentUsers || [],
       pendingProviders: recentProviders || [],
@@ -85,13 +92,14 @@ export async function GET() {
     console.error("Admin dashboard error:", error);
     return NextResponse.json({
       stats: {
-        totalUsers: 1247,
-        totalProviders: 312,
-        pendingProviders: 18,
-        totalBookings: 5890,
-        completedBookings: 4210,
-        pendingBookings: 143,
-        totalRevenue: 2847500,
+        totalUsers: 0,
+        totalProviders: 0,
+        pendingProviders: 0,
+        totalBookings: 0,
+        completedBookings: 0,
+        pendingBookings: 0,
+        totalRevenue: 0,
+        totalPlatformRevenue: 0,
       },
       recentUsers: [],
       pendingProviders: [],

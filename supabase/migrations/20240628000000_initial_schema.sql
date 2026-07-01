@@ -248,18 +248,3 @@ CREATE POLICY "notifications_update" ON notifications FOR UPDATE USING (
 ALTER PUBLICATION supabase_realtime ADD TABLE bookings;
 ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
 ALTER PUBLICATION supabase_realtime ADD TABLE messages;
-
--- 14. Payment tracking (credits system)
-ALTER TABLE payments ADD COLUMN IF NOT EXISTS platform_fee FLOAT DEFAULT 0;
-ALTER TABLE payments ADD COLUMN IF NOT EXISTS provider_payout FLOAT DEFAULT 0;
-ALTER TABLE service_providers ADD COLUMN IF NOT EXISTS total_earnings FLOAT DEFAULT 0;
-
--- 15. Production indexes for scale
-CREATE INDEX IF NOT EXISTS idx_bookings_pending_service ON bookings (status, service_type) WHERE status = 'PENDING';
-CREATE INDEX IF NOT EXISTS idx_bookings_provider_status ON bookings (provider_id, status);
-CREATE INDEX IF NOT EXISTS idx_bookings_customer_status ON bookings (customer_id, status);
-CREATE INDEX IF NOT EXISTS idx_bookings_completed_price ON bookings (total_price) WHERE status = 'COMPLETED';
-CREATE INDEX IF NOT EXISTS idx_notifications_unread_profile ON notifications (profile_id, is_read) WHERE is_read = false;
-CREATE INDEX IF NOT EXISTS idx_messages_booking_created ON messages (booking_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_earnings_provider_status ON earnings (provider_id, status);
-CREATE INDEX IF NOT EXISTS idx_payments_status_created ON payments (status, created_at DESC);
