@@ -14,21 +14,25 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  try {
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
+    if (!session) {
+      redirect("/login?callbackUrl=/admin");
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("auth_id", session.user.id)
+      .single();
+
+    if (!profile || profile.role !== "ADMIN") {
+      redirect("/");
+    }
+  } catch {
     redirect("/login?callbackUrl=/admin");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("auth_id", session.user.id)
-    .single();
-
-  if (!profile || profile.role !== "ADMIN") {
-    redirect("/");
   }
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -38,18 +38,27 @@ export function SupabaseAuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
-
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("auth_id", userId)
-      .single();
-    if (data) setProfile(data as Profile);
-  };
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
 
   useEffect(() => {
+    try {
+      supabaseRef.current = createClient();
+    } catch {
+      setIsLoading(false);
+      return;
+    }
+
+    const supabase = supabaseRef.current;
+
+    const fetchProfile = async (userId: string) => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("auth_id", userId)
+        .single();
+      if (data) setProfile(data as Profile);
+    };
+
     const init = async () => {
       const {
         data: { session },
@@ -80,13 +89,20 @@ export function SupabaseAuthProvider({
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (!supabaseRef.current) return;
+    await supabaseRef.current.auth.signOut();
     setUser(null);
     setProfile(null);
   };
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.id);
+    if (!user || !supabaseRef.current) return;
+    const { data } = await supabaseRef.current
+      .from("profiles")
+      .select("*")
+      .eq("auth_id", user.id)
+      .single();
+    if (data) setProfile(data as Profile);
   };
 
   return (
