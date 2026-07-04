@@ -66,3 +66,5 @@ prisma/
 # Firestore indexes
 dataconnect*.gql
 firestore*
+
+dev-server.log
