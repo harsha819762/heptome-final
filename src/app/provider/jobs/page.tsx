@@ -23,7 +23,7 @@ interface PendingJob {
 }
 
 export default function JobsBoardPage() {
-  const { user, profile } = useFirebaseAuth();
+  const { user } = useFirebaseAuth();
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -31,20 +31,10 @@ export default function JobsBoardPage() {
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const loadPendingJobs = async () => {
-    if (!user || !profile) return;
     setIsLoading(true);
-
     try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/provider/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        setIsLoading(false);
-        return;
-      }
-
+      const res = await fetch("/api/provider/dashboard");
+      if (!res.ok) { setIsLoading(false); return; }
       const data = await res.json();
       setPendingJobs((data.pendingRequests || []).map((j: any) => ({
         id: j.id,
@@ -58,51 +48,29 @@ export default function JobsBoardPage() {
         service_type: "",
         created_at: j.scheduledDate,
       })));
-    } catch (err: any) {
-      toast.error("Failed to load available jobs");
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { toast.error("Failed to load available jobs"); } finally { setIsLoading(false); }
   };
 
-  useEffect(() => {
-    loadPendingJobs();
-  }, [user, profile]);
+  useEffect(() => { loadPendingJobs(); }, []);
 
   useEffect(() => {
-    if (!user) return;
     const interval = setInterval(loadPendingJobs, 30000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, []);
 
   const handleAcceptJob = async (jobId: string) => {
-    if (!user) return;
     setAcceptingId(jobId);
-
     try {
-      const token = await user.getIdToken();
       const res = await fetch(`/api/provider/jobs/${jobId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "ACCEPT" }),
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to accept job");
-      }
-
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to accept job"); }
       toast.success("Job accepted! Redirecting...");
       setPendingJobs((prev) => prev.filter((j) => j.id !== jobId));
       router.push(`/provider/jobs/${jobId}`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to accept job");
-    } finally {
-      setAcceptingId(null);
-    }
+    } catch (err: any) { toast.error(err.message || "Failed to accept job"); } finally { setAcceptingId(null); }
   };
 
   if (isLoading) {
@@ -164,11 +132,19 @@ export default function JobsBoardPage() {
                     <IoTimeOutline className="text-[#2563EB] text-base" />
                     <span>{job.scheduled_time}</span>
                   </div>
-                  <div className="col-span-2 flex items-start gap-2 border-t pt-2 mt-2">
+                  <div className="col-span-2 flex items-start gap-2 pt-2 mt-2 border-t border-gray-200/60">
                     <IoLocationOutline className="text-[#2563EB] text-base shrink-0 mt-0.5" />
-                    <span className="line-clamp-1">
-                      {job.customer_address?.street || "Address on file"}
-                    </span>
+                    <div className="space-y-0.5">
+                      <span className="line-clamp-1 font-bold text-gray-700">
+                        {job.customer_address?.street || "Address on file"}
+                      </span>
+                      {job.customer_address?.city && (
+                        <span className="text-[9px] text-gray-400 block">{job.customer_address.city}</span>
+                      )}
+                      {job.customer_address?.pincode && (
+                        <span className="text-[9px] text-gray-400 block">PIN: {job.customer_address.pincode}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

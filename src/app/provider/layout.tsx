@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
@@ -20,6 +20,84 @@ const SERVICE_CATEGORIES = [
   { id: "ELECTRICIAN", name: "Electrician Services" },
   { id: "PLUMBER", name: "Plumber Services" },
 ];
+
+function ProviderShell({ children, profile, signOut }: { children: React.ReactNode; profile: any; signOut: () => Promise<void> }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row text-[#1A1A2E]">
+      <aside className="w-full md:w-64 bg-gray-900 text-gray-400 shrink-0 flex flex-col justify-between p-6">
+        <div className="space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center text-white font-black text-sm">H</div>
+            <div>
+              <span className="text-lg font-black text-white tracking-tight">Heptome</span>
+              <span className="block text-[9px] font-bold text-blue-400 uppercase tracking-widest leading-none mt-1">Provider Portal</span>
+            </div>
+          </div>
+
+          <nav className="flex flex-col gap-1 text-xs font-bold">
+            {[
+              { name: "Dashboard", href: "/provider", icon: <IoSpeedometerOutline /> },
+              { name: "Jobs Board", href: "/provider/jobs", icon: <IoListOutline /> },
+            ].map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link key={item.href} href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive ? "bg-[#2563EB] text-white" : "hover:bg-gray-800 hover:text-white"}`}>
+                  <span className="text-base shrink-0">{item.icon}</span>
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="border-t border-gray-800 pt-6 mt-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <img src={profile?.avatarUrl || "https://i.pravatar.cc/150"} alt={profile?.name || "Provider"}
+              className="w-9 h-9 rounded-xl object-cover border border-gray-700 shrink-0" />
+            <div className="overflow-hidden">
+              <p className="text-xs font-black text-white leading-none line-clamp-1">{profile?.name || "Demo Provider"}</p>
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide leading-none mt-1 block">Active Partner</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Link href="/" className="flex items-center justify-center gap-2 border border-gray-700 hover:bg-gray-800 hover:text-white rounded-xl py-2 px-3 text-[10px] font-extrabold text-gray-400 transition-colors">
+              ← Client Mode
+            </Link>
+            <button onClick={async () => { await signOut(); router.push("/login"); }}
+              className="flex items-center justify-center gap-2 bg-red-950/20 border border-red-900/30 hover:bg-red-900/20 text-red-400 rounded-xl py-2 px-3 text-[10px] font-extrabold transition-colors cursor-pointer">
+              <IoLogOutOutline /> Logout
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <div className="flex-1 flex flex-col overflow-x-hidden min-h-screen">
+        <header className="bg-white border-b border-gray-100 h-16 flex items-center justify-between px-6 sm:px-8">
+          <div>
+            <h1 className="text-sm sm:text-base font-bold text-[#1A1A2E] tracking-tight capitalize">
+              {pathname === "/provider" ? "Partner Dashboard" : pathname.replace("/provider/", "").replace("-", " ")}
+            </h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 bg-blue-50 text-[#2563EB] px-3 py-1 rounded-full border border-blue-100 text-[10px] font-black shrink-0">
+              <IoCheckmarkCircleSharp />
+              <span>Verified Account</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto space-y-8">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
 
 export default function ProviderLayout({
   children,
@@ -46,8 +124,7 @@ export default function ProviderLayout({
   }
 
   if (!user) {
-    router.push("/login?callbackUrl=/provider");
-    return null;
+    return <ProviderShell profile={null} signOut={signOut}>{children}</ProviderShell>;
   }
 
   const isProvider = profile?.role === "PROVIDER" || profile?.role === "ADMIN";
@@ -144,76 +221,5 @@ export default function ProviderLayout({
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row text-[#1A1A2E]">
-      <aside className="w-full md:w-64 bg-gray-900 text-gray-400 shrink-0 flex flex-col justify-between p-6">
-        <div className="space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center text-white font-black text-sm">H</div>
-            <div>
-              <span className="text-lg font-black text-white tracking-tight">Heptome</span>
-              <span className="block text-[9px] font-bold text-blue-400 uppercase tracking-widest leading-none mt-1">Provider Portal</span>
-            </div>
-          </div>
-
-          <nav className="flex flex-col gap-1 text-xs font-bold">
-            {[
-              { name: "Dashboard", href: "/provider", icon: <IoSpeedometerOutline /> },
-              { name: "Jobs Board", href: "/provider/jobs", icon: <IoListOutline /> },
-            ].map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link key={item.href} href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive ? "bg-[#2563EB] text-white" : "hover:bg-gray-800 hover:text-white"}`}>
-                  <span className="text-base shrink-0">{item.icon}</span>
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="border-t border-gray-800 pt-6 mt-8 space-y-4">
-          <div className="flex items-center gap-3">
-            <img src={profile?.avatarUrl || "https://i.pravatar.cc/150"} alt={profile?.name || "Provider"}
-              className="w-9 h-9 rounded-xl object-cover border border-gray-700 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="text-xs font-black text-white leading-none line-clamp-1">{profile?.name}</p>
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide leading-none mt-1 block">Active Partner</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Link href="/" className="flex items-center justify-center gap-2 border border-gray-700 hover:bg-gray-800 hover:text-white rounded-xl py-2 px-3 text-[10px] font-extrabold text-gray-400 transition-colors">
-              ← Client Mode
-            </Link>
-            <button onClick={async () => { await signOut(); router.push("/login"); }}
-              className="flex items-center justify-center gap-2 bg-red-950/20 border border-red-900/30 hover:bg-red-900/20 text-red-400 rounded-xl py-2 px-3 text-[10px] font-extrabold transition-colors cursor-pointer">
-              <IoLogOutOutline /> Logout
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      <div className="flex-1 flex flex-col overflow-x-hidden min-h-screen">
-        <header className="bg-white border-b border-gray-100 h-16 flex items-center justify-between px-6 sm:px-8">
-          <div>
-            <h1 className="text-sm sm:text-base font-bold text-[#1A1A2E] tracking-tight capitalize">
-              {pathname === "/provider" ? "Partner Dashboard" : pathname.replace("/provider/", "").replace("-", " ")}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 bg-blue-50 text-[#2563EB] px-3 py-1 rounded-full border border-blue-100 text-[10px] font-black shrink-0">
-              <IoCheckmarkCircleSharp />
-              <span>Verified Account</span>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto space-y-8">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+  return <ProviderShell profile={profile} signOut={signOut}>{children}</ProviderShell>;
 }

@@ -22,8 +22,14 @@ export async function GET(req: Request) {
       scheduledTime: b.bookingDate.split("T")[1]?.slice(0, 5) || "",
       status: b.status,
       totalPrice: b.totalAmount,
+      customerName: b.customer.name,
       customerPhone: b.customer.phoneNumber,
-      customerAddress: { street: b.customer.address || "", city: "", flatNo: "", pincode: "" },
+      customerAddress: {
+        street: b.customer.address || "",
+        city: b.customer.address?.split(",")[1]?.trim() || "",
+        flatNo: "",
+        pincode: b.customer.address?.match(/\d{6}/)?.[0] || "",
+      },
       beforePhotos: [],
       afterPhotos: [],
     }));

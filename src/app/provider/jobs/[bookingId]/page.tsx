@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
-import { Map, type MapViewport } from "@/components/ui/map";
+import { motion } from "framer-motion";
+import { Map, type MapViewport, type MapMarker } from "@/components/ui/map";
 import { 
   IoCallOutline, IoLocationOutline, IoCalendarOutline, 
-  IoTimeOutline, IoCheckmarkCircleSharp, IoCameraOutline, IoDocumentTextOutline 
+  IoTimeOutline, IoCheckmarkCircleSharp, IoCameraOutline, IoDocumentTextOutline,
+  IoNavigateOutline, IoLocateOutline
 } from "react-icons/io5";
 import { toast } from "react-hot-toast";
 import ChatWindow from "@/components/ChatWindow";
@@ -39,7 +39,6 @@ export default function JobExecutionPage() {
   const params = useParams();
   const bookingId = params?.bookingId as string;
   const router = useRouter();
-  const { user } = useFirebaseAuth();
 
   const [isLoading, setIsLoading] = useState(true);
   const [job, setJob] = useState<BookingDetail | null>(null);
@@ -51,6 +50,54 @@ export default function JobExecutionPage() {
     bearing: 0,
     pitch: 0
   });
+  const [techLocation, setTechLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationWatchId, setLocationWatchId] = useState<number | null>(null);
+  const [trackingActive, setTrackingActive] = useState(false);
+  const [distance, setDistance] = useState<string>("");
+  const [locationError, setLocationError] = useState<string>("");
+
+  function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  const startTracking = useCallback(() => {
+    setLocationError("");
+    if (!navigator.geolocation) { setLocationError("Geolocation not supported"); return; }
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setTechLocation({ lat: latitude, lng: longitude });
+        setTrackingActive(true);
+        setLocationError("");
+        setViewport((prev) => ({ ...prev, center: [longitude, latitude], zoom: 14 }));
+      },
+      (err) => { setLocationError(`Location error: ${err.message}`); setTrackingActive(false); },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+    setLocationWatchId(id);
+  }, []);
+
+  const stopTracking = useCallback(() => {
+    if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId);
+    setLocationWatchId(null);
+    setTrackingActive(false);
+  }, [locationWatchId]);
+
+  useEffect(() => {
+    return () => { if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId); };
+  }, [locationWatchId]);
+
+  useEffect(() => {
+    if (techLocation && job?.customerAddress) {
+      const dist = haversineDistance(techLocation.lat, techLocation.lng, viewport.center[1], viewport.center[0]);
+      setDistance(dist < 1 ? `${Math.round(dist * 1000)} m` : `${dist.toFixed(1)} km`);
+    }
+  }, [techLocation, job]);
 
   async function loadJobDetails() {
     try {
@@ -88,19 +135,14 @@ export default function JobExecutionPage() {
   }, [bookingId]);
 
   const handleUpdateStatus = async (action: "START" | "COMPLETE") => {
-    if (!user) return;
     setIsSubmitInProgress(true);
     const toastMsg = action === "START" ? "Starting service..." : "Completing service...";
     toast.loading(toastMsg, { id: "job-action" });
 
     try {
-      const token = await user.getIdToken();
       const res = await fetch(`/api/provider/jobs/${bookingId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
 
@@ -121,7 +163,6 @@ export default function JobExecutionPage() {
   };
 
   const handlePhotoUploadMock = async (photoType: "before" | "after") => {
-    if (!user) return;
     const beforeImages = [
       "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500",
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500",
@@ -137,13 +178,9 @@ export default function JobExecutionPage() {
     toast.loading("Uploading photo...", { id: "upload-photo" });
 
     try {
-      const token = await user.getIdToken();
       const res = await fetch(`/api/provider/jobs/${bookingId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           action: "UPLOAD_PHOTOS", 
           photoUrl: randomPhoto,
@@ -247,12 +284,46 @@ export default function JobExecutionPage() {
           <div className="bg-white border border-slate-100 rounded-3xl p-4 shadow-xs space-y-4">
             <div className="flex justify-between items-center px-2">
               <h4 className="font-extrabold text-sm text-[#1A1A2E] flex items-center gap-1.5">
-                <IoLocationOutline className="text-blue-600 text-base" /> Directions to Client
+                <IoLocationOutline className="text-blue-600 text-base" /> Live Tracking
               </h4>
+              <div className="flex items-center gap-2">
+                {distance && <span className="text-[10px] font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">{distance}</span>}
+                {!trackingActive ? (
+                  <button onClick={startTracking} className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
+                    <IoLocateOutline /> Share Location
+                  </button>
+                ) : (
+                  <button onClick={stopTracking} className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
+                    <IoNavigateOutline /> Stop
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="rounded-2xl overflow-hidden h-[300px] border border-slate-200">
-              <Map viewport={viewport} onViewportChange={setViewport} />
+            {locationError && (
+              <div className="mx-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-[10px] font-semibold text-amber-700">
+                {locationError}
+              </div>
+            )}
+            <div className="rounded-2xl overflow-hidden h-[350px] border border-slate-200">
+              <Map
+                viewport={viewport}
+                onViewportChange={setViewport}
+                markers={[
+                  ...(job.customerAddress?.longitude && job.customerAddress?.latitude
+                    ? [{ longitude: job.customerAddress.longitude, latitude: job.customerAddress.latitude, label: "Customer", color: "#10B981" } as MapMarker]
+                    : []),
+                  ...(techLocation
+                    ? [{ longitude: techLocation.lng, latitude: techLocation.lat, label: "You", color: "#2563EB", pulse: trackingActive } as MapMarker]
+                    : []),
+                ]}
+              />
             </div>
+            {trackingActive && techLocation && (
+              <div className="mx-2 flex items-center gap-2 text-[10px] text-gray-400 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Live location sharing active {distance && `• ${distance} from customer`}
+              </div>
+            )}
           </div>
         </div>
 

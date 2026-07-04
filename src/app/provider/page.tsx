@@ -7,14 +7,11 @@ import { useFirebaseAuth } from "@/context/FirebaseAuthProvider";
 import { motion } from "framer-motion";
 import {
   IoCashOutline, IoCheckmarkCircleOutline, IoBriefcaseOutline,
-  IoNotificationsOutline, IoChevronForwardOutline, IoStar, IoTimeOutline,
+  IoNotificationsOutline, IoChevronForwardOutline, IoStar, IoTimeOutline, IoLocationOutline,
 } from "react-icons/io5";
 
 interface DashboardData {
-  totalEarnings: number;
-  completedJobsCount: number;
-  activeJobsCount: number;
-  pendingRequestsCount: number;
+  stats: { totalEarnings: number; completedJobsCount: number; activeJobsCount: number; pendingRequestsCount: number };
   provider: any;
   activeJobs: any[];
   completedJobs: any[];
@@ -22,45 +19,28 @@ interface DashboardData {
 }
 
 export default function ProviderDashboardPage() {
-  const { user, profile } = useFirebaseAuth();
+  const { user } = useFirebaseAuth();
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
 
   const loadData = async () => {
-    if (!user || !profile) return;
     setIsLoading(true);
-
     try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/provider/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        setIsLoading(false);
-        return;
-      }
-
+      const res = await fetch("/api/provider/dashboard");
+      if (!res.ok) { setIsLoading(false); return; }
       const json = await res.json();
       setData(json);
-    } catch (err: any) {
-      console.error("Failed to load dashboard data", err);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { /* ignore */ } finally { setIsLoading(false); }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [user, profile]);
+  useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
-    if (!user || !profile) return;
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
-  }, [user, profile]);
+  }, []);
 
   if (isLoading) {
     return (
@@ -80,28 +60,29 @@ export default function ProviderDashboardPage() {
     );
   }
 
+  const s = data.stats ?? { totalEarnings: 0, completedJobsCount: 0, activeJobsCount: 0, pendingRequestsCount: 0 };
   const statCards = [
     {
       title: "Total Earnings",
-      val: `₹${data.totalEarnings.toFixed(2)}`,
+      val: `₹${s.totalEarnings.toFixed(2)}`,
       icon: <IoCashOutline />,
       color: "text-emerald-600 bg-emerald-50 border-emerald-100",
     },
     {
       title: "Jobs Completed",
-      val: data.completedJobsCount.toString(),
+      val: s.completedJobsCount.toString(),
       icon: <IoCheckmarkCircleOutline />,
       color: "text-blue-600 bg-blue-50 border-blue-100",
     },
     {
       title: "Active Jobs",
-      val: data.activeJobsCount.toString(),
+      val: s.activeJobsCount.toString(),
       icon: <IoBriefcaseOutline />,
       color: "text-amber-600 bg-amber-50 border-amber-100",
     },
     {
       title: "Available Leads",
-      val: data.pendingRequestsCount.toString(),
+      val: s.pendingRequestsCount.toString(),
       icon: <IoNotificationsOutline />,
       color: "text-purple-600 bg-purple-50 border-purple-100",
     },
@@ -149,26 +130,34 @@ export default function ProviderDashboardPage() {
             ) : (
               <div className="space-y-4">
                 {data.activeJobs.map((job) => (
-                  <div key={job.id} className="border border-gray-100 bg-gray-50/50 hover:bg-gray-50 p-4 rounded-2xl cursor-pointer transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-gray-400 uppercase">#{job.bookingNumber}</span>
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${job.status === "IN_PROGRESS" ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"}`}>
-                          {job.status.replace("_", " ")}
-                        </span>
+                  <Link key={job.id} href={`/provider/jobs/${job.id}`}>
+                    <div className="border border-gray-100 bg-gray-50/50 hover:bg-gray-50 p-4 rounded-2xl cursor-pointer transition-colors group">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-gray-400 uppercase">#{job.bookingNumber}</span>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${job.status === "IN_PROGRESS" ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"}`}>
+                              {job.status.replace("_", " ")}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-xs sm:text-sm text-[#1A1A2E] group-hover:text-blue-600 transition-colors">{job.serviceName}</h4>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0">
+                          <span className="font-extrabold text-sm text-[#1A1A2E]">₹{job.totalPrice}</span>
+                          <span className="p-1 rounded-full bg-white border group-hover:bg-[#2563EB] group-hover:text-white transition-colors text-gray-400">
+                            <IoChevronForwardOutline />
+                          </span>
+                        </div>
                       </div>
-                      <h4 className="font-bold text-xs sm:text-sm text-[#1A1A2E] group-hover:text-blue-600 transition-colors">{job.serviceName}</h4>
-                      <p className="text-[10px] text-gray-400 font-semibold flex items-center gap-1">
-                        <IoTimeOutline /> {job.scheduledDate} at {job.scheduledTime}
-                      </p>
+                      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[10px] text-gray-400 font-semibold">
+                        <span className="flex items-center gap-1"><IoTimeOutline /> {job.scheduledDate} at {job.scheduledTime}</span>
+                        {job.customerName && <span>Customer: {job.customerName}</span>}
+                        {job.customerAddress?.street && (
+                          <span className="flex items-center gap-1"><IoLocationOutline /> {job.customerAddress.street}{job.customerAddress.city ? `, ${job.customerAddress.city}` : ""}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100 shrink-0">
-                      <span className="font-extrabold text-sm text-[#1A1A2E]">₹{job.totalPrice}</span>
-                      <span className="p-1 rounded-full bg-white border group-hover:bg-[#2563EB] group-hover:text-white transition-colors text-gray-400">
-                        <IoChevronForwardOutline />
-                      </span>
-                    </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
