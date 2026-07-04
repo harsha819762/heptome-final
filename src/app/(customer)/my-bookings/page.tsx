@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useCart } from "@/context/CartContext";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { IoStar, IoCalendarOutline, IoTimeOutline, IoTrashOutline } from "react-icons/io5";
+import { IoStar, IoCalendarOutline, IoTimeOutline, IoTrashOutline, IoNavigateOutline } from "react-icons/io5";
 import { toast } from "react-hot-toast";
 import ChatWindow from "@/components/ChatWindow";
 import { getFirebaseDataConnect } from "@/lib/firebase/client";
@@ -203,7 +204,10 @@ export default function MyBookingsPage() {
               {tabLabel(b) === "Upcoming" && (
                 <div className="pt-4 border-t border-slate-100 flex justify-between items-center gap-3">
                   <ChatWindow bookingId={b.id} />
-                  <button onClick={() => setSelectedBookingForCancel(b)} className="flex items-center gap-1.5 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"><IoTrashOutline /> Cancel Booking</button>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/track/${b.id}`} className="flex items-center gap-1 border border-blue-200 hover:border-blue-500 text-blue-600 hover:bg-blue-50 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"><IoNavigateOutline /> Track</Link>
+                    <button onClick={() => setSelectedBookingForCancel(b)} className="flex items-center gap-1.5 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"><IoTrashOutline /> Cancel</button>
+                  </div>
                 </div>
               )}
 
